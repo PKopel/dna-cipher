@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use std::fs::File;
+use std::fs::{File, OpenOptions};
 use std::io;
 use std::io::BufReader;
 use std::io::{stdin, stdout};
@@ -25,7 +25,7 @@ struct Args {
     command: Commands,
 }
 
-#[derive(Subcommand, Debug, Clone)]
+#[derive(Subcommand, Debug, Clone, PartialEq, Eq)]
 enum Commands {
     Encrypt,
     Decrypt,
@@ -53,7 +53,7 @@ fn write_file<T: Write>(mut writer: T, dna: Vec<DNA>) -> io::Result<usize> {
 
 fn main() -> io::Result<()> {
     let args = Args::parse();
-    let mut dna = match args.input {
+    let dna = match args.input {
         Some(file) => read_file(BufReader::new(File::open(file)?))?,
         None => read_file(stdin())?,
     };
@@ -66,19 +66,27 @@ fn main() -> io::Result<()> {
         println!("{:?}", dna);
     }
 
-    for _ in 0..3 {
-        let (mut h, mut t) = feistel::round(dna, key.clone());
-        if args.debug {
-            println!("{:?}{:?}", h, t);
-        }
-        t.append(&mut h);
-        dna = t
-    }
+    let result = if args.command == Commands::Encrypt {
+        Ok(feistel::encrypt(dna, key))
+    } else {
+        feistel::decrypt(dna, key)
+    };
 
-    match args.output {
-        Some(file) => write_file(File::open(file)?, dna),
-        None => write_file(stdout(), dna),
-    }?;
+    match result {
+        Ok(result) => {
+            if args.debug {
+                println!("{:?}", result);
+            }
+            match args.output {
+                Some(file) => write_file(
+                    OpenOptions::new().write(true).create(true).open(file)?,
+                    result,
+                ),
+                None => write_file(stdout(), result),
+            }?;
+        }
+        Err(msg) => println!("{}", msg),
+    }
 
     return Ok(());
 }
