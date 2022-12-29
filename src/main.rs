@@ -1,4 +1,5 @@
 use clap::{Parser, Subcommand};
+use log::{debug, error};
 use std::fs::{File, OpenOptions};
 use std::io;
 use std::io::BufReader;
@@ -19,8 +20,8 @@ struct Args {
     output: Option<String>,
     #[arg(short, long)]
     key: Option<String>,
-    #[arg(short, long)]
-    debug: bool,
+    #[arg(short, long, default_value_t = 0)]
+    verbose: usize,
     #[command(subcommand)]
     command: Commands,
 }
@@ -53,6 +54,14 @@ fn write_file<T: Write>(mut writer: T, dna: Vec<DNA>) -> io::Result<usize> {
 
 fn main() -> io::Result<()> {
     let args = Args::parse();
+
+    stderrlog::new()
+        .module(module_path!())
+        .verbosity(args.verbose)
+        .timestamp(stderrlog::Timestamp::Second)
+        .init()
+        .unwrap();
+
     let dna = match args.input {
         Some(file) => read_file(BufReader::new(File::open(file)?))?,
         None => read_file(stdin())?,
@@ -61,10 +70,9 @@ fn main() -> io::Result<()> {
         Some(file) => read_file(BufReader::new(File::open(file)?))?,
         None => read_file(stdin())?,
     };
-    if args.debug {
-        println!("{:?}", key);
-        println!("{:?}", dna);
-    }
+
+    debug!("key = {:?}", key);
+    debug!("msg = {:?}", dna);
 
     let result = if args.command == Commands::Encrypt {
         Ok(feistel::encrypt(dna, key))
@@ -74,9 +82,8 @@ fn main() -> io::Result<()> {
 
     match result {
         Ok(result) => {
-            if args.debug {
-                println!("{:?}", result);
-            }
+            debug!("enc = {:?}", result);
+
             match args.output {
                 Some(file) => write_file(
                     OpenOptions::new().write(true).create(true).open(file)?,
@@ -85,7 +92,7 @@ fn main() -> io::Result<()> {
                 None => write_file(stdout(), result),
             }?;
         }
-        Err(msg) => println!("{}", msg),
+        Err(msg) => error!("{}", msg),
     }
 
     return Ok(());

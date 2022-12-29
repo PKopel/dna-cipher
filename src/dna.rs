@@ -1,11 +1,26 @@
-use std::ops::{Add, BitXor};
+use std::{
+    fmt::Debug,
+    ops::{Add, BitXor},
+};
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub enum DNA {
     A,
     C,
     G,
     T,
+}
+
+impl Debug for DNA {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            DNA::A => "'A'",
+            DNA::C => "'C'",
+            DNA::G => "'G'",
+            DNA::T => "'T'",
+        };
+        write!(f, "{}", s)
+    }
 }
 
 impl BitXor for DNA {

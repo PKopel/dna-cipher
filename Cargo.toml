@@ -8,4 +8,6 @@ edition = "2021"
 
 [dependencies]
 clap = { version = "4.0", features = ["derive"] }
+log = "0.4.17"
 phf = { version = "0.11", features = ["macros"] }
+stderrlog = "0.5.4"
