@@ -1,4 +1,5 @@
 use crate::dna::{xors::get_xor, DNA};
+use log::trace;
 
 macro_rules! min {
     ($x: expr) => ($x);
@@ -42,9 +43,10 @@ fn round(
             source_idx += 1;
         }
     }
+    trace!("intron_len = {}", intron_len);
     // use last two bases of key to select the xor definition
     let dnaxor = get_xor(&key[KEY_SIZE - 2..KEY_SIZE]);
-    for i in 0..intron_len {
+    for i in 0..TARGET_SIZE {
         // order is important - target must be the first argument
         target[i] = dnaxor(target[i], intron[i]);
     }
