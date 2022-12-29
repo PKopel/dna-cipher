@@ -5,10 +5,12 @@ macro_rules! min {
     ($x: expr, $($z: expr),+) => (::std::cmp::min($x, min!($($z),*)));
 }
 
-const TARGET_SIZE: usize = 16;
-const SOURCE_SIZE: usize = 48;
+const TARGET_SIZE: usize = 18;
+const SOURCE_SIZE: usize = 46;
 const INPUT_SIZE: usize = 64;
 const KEY_SIZE: usize = 8;
+const INTRON_SIZE: usize = 6;
+// intron size of 6 with target size of 18 uses 3 out of 4 pairs in key
 
 pub fn round(
     input: &[DNA; INPUT_SIZE],
@@ -26,7 +28,11 @@ pub fn round(
     let mut key_idx = 0;
     while source_idx < SOURCE_SIZE - 1 && intron_len < TARGET_SIZE {
         if source[source_idx] == key[key_idx] && source[source_idx + 1] == key[key_idx + 1] {
-            let cp_len = min!(SOURCE_SIZE - 1 - source_idx, TARGET_SIZE - intron_len, 8);
+            let cp_len = min!(
+                SOURCE_SIZE - 1 - source_idx, // limit to the end of the source block
+                TARGET_SIZE - intron_len,     // limit to the size of target block
+                INTRON_SIZE
+            );
             intron.append(&mut Vec::from_iter(
                 source[source_idx..source_idx + cp_len].iter().cloned(),
             ));

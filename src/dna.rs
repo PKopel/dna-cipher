@@ -102,8 +102,11 @@ mod test {
     use super::*;
     #[test]
     fn test_xor() {
-        assert_eq!(DNA::A ^ DNA::A, DNA::A);
-        assert_eq!((DNA::A ^ DNA::G) ^ DNA::G, DNA::A);
+        for a in [DNA::A, DNA::C, DNA::G, DNA::T] {
+            for b in [DNA::A, DNA::C, DNA::G, DNA::T] {
+                assert_eq!((a ^ b) ^ b, a);
+            }
+        }
     }
 
     #[test]
