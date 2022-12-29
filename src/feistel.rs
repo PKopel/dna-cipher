@@ -6,9 +6,9 @@ macro_rules! min {
     ($x: expr, $($z: expr),+) => (::std::cmp::min($x, min!($($z),*)));
 }
 
+pub(crate) const INPUT_SIZE: usize = 64;
 const TARGET_SIZE: usize = 18;
 const SOURCE_SIZE: usize = 46;
-const INPUT_SIZE: usize = 64;
 const KEY_SIZE: usize = 8;
 const INTRON_SIZE: usize = 6;
 // intron size of 6 with target size of 18 uses 3 out of 4 pairs in key

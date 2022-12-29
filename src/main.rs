@@ -1,9 +1,10 @@
+use clap::builder::Str;
 use clap::{Parser, Subcommand};
 use log::{debug, error};
-use std::fs::{File, OpenOptions};
-use std::io;
-use std::io::BufReader;
+use std::fs::{read, File, OpenOptions};
+use std::io::{self, BufWriter};
 use std::io::{stdin, stdout};
+use std::io::{BufRead, BufReader};
 use std::io::{Read, Write};
 
 pub mod dna;
@@ -50,6 +51,36 @@ fn write_file<T: Write>(mut writer: T, dna: Vec<DNA>) -> io::Result<usize> {
         .map(|chunk| dna::DNA_to_binary(chunk.try_into().unwrap()))
         .collect::<Vec<u8>>();
     return writer.write(&buffer);
+}
+
+fn process<R: Read, W: Write>(
+    reader: R,
+    mut writer: W,
+    fun: fn(Vec<DNA>) -> Result<Vec<DNA>, String>,
+) -> io::Result<()> {
+    let mut reader = BufReader::with_capacity(2 * feistel::INPUT_SIZE, reader);
+    loop {
+        let buffer = reader.fill_buf()?;
+        if buffer.len() == 0 {
+            break;
+        }
+        let dna = buffer
+            .iter()
+            .flat_map(dna::binary_to_DNA)
+            .collect::<Vec<DNA>>();
+        let result = fun(dna);
+        match result {
+            Ok(result) => {
+                let buffer = result
+                    .chunks_exact(4)
+                    .map(|chunk| dna::DNA_to_binary(chunk.try_into().unwrap()))
+                    .collect::<Vec<u8>>();
+                writer.write(&buffer)?;
+            }
+            Err(msg) => error!("{}", msg),
+        }
+    }
+    return Ok(());
 }
 
 fn main() -> io::Result<()> {
