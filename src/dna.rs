@@ -1,6 +1,8 @@
+pub mod xors;
+
 use std::{
     fmt::Debug,
-    ops::{Add, BitXor},
+    ops::{Add, BitXor, Sub},
 };
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -34,6 +36,39 @@ impl BitXor for DNA {
                 DNA::C => DNA::A,
                 DNA::G => DNA::T,
                 DNA::T => DNA::G,
+            },
+            Self::G => match rhs {
+                DNA::A => DNA::G,
+                DNA::C => DNA::T,
+                DNA::G => DNA::A,
+                DNA::T => DNA::C,
+            },
+            Self::T => match rhs {
+                DNA::A => DNA::T,
+                DNA::C => DNA::G,
+                DNA::G => DNA::C,
+                DNA::T => DNA::A,
+            },
+        };
+    }
+}
+
+impl Sub for DNA {
+    type Output = Self;
+
+    fn sub(self, rhs: Self) -> Self::Output {
+        return match self {
+            Self::A => match rhs {
+                DNA::A => DNA::A,
+                DNA::C => DNA::C,
+                DNA::G => DNA::T,
+                DNA::T => DNA::G,
+            },
+            Self::C => match rhs {
+                DNA::A => DNA::C,
+                DNA::C => DNA::A,
+                DNA::G => DNA::G,
+                DNA::T => DNA::T,
             },
             Self::G => match rhs {
                 DNA::A => DNA::G,
@@ -115,13 +150,17 @@ pub fn DNA_to_binary(dna: &[DNA; 4]) -> u8 {
 #[cfg(test)]
 mod test {
     use super::*;
+
     #[test]
     fn test_xor() {
-        for a in [DNA::A, DNA::C, DNA::G, DNA::T] {
-            for b in [DNA::A, DNA::C, DNA::G, DNA::T] {
-                assert_eq!((a ^ b) ^ b, a);
-            }
-        }
+        assert_eq!(DNA::A ^ DNA::A, DNA::A);
+        assert_eq!((DNA::A ^ DNA::G) ^ DNA::G, DNA::A);
+    }
+
+    #[test]
+    fn test_sub() {
+        assert_eq!(DNA::A - DNA::A, DNA::A);
+        assert_eq!((DNA::A - DNA::G) - DNA::T, DNA::A);
     }
 
     #[test]
