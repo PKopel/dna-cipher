@@ -3,7 +3,6 @@ use log::debug;
 use std::fs::{File, OpenOptions};
 use std::io;
 use std::io::{stdin, stdout};
-use std::io::{BufRead, BufReader};
 use std::io::{Read, Write};
 
 pub mod dna;
@@ -46,38 +45,39 @@ fn read_key(mut file: File) -> io::Result<[DNA; feistel::KEY_SIZE]> {
     return Ok(result.try_into().unwrap());
 }
 
-fn process<R, W, F>(reader: R, mut writer: W, fun: F) -> io::Result<()>
+fn process<R, W, F>(mut reader: R, mut writer: W, fun: F) -> io::Result<()>
 where
     R: Read,
     W: Write,
     F: Fn(Vec<DNA>) -> Result<Vec<DNA>, String>,
 {
-    let mut reader = BufReader::with_capacity(2 * feistel::INPUT_CHUNK_SIZE, reader);
+    let bytes = 2 * feistel::INPUT_CHUNK_SIZE;
+    let mut buffer = Vec::with_capacity(bytes);
     loop {
-        let length = {
-            let buffer = reader.fill_buf()?;
-            let dna = buffer
-                .iter()
-                .flat_map(dna::binary_to_DNA)
-                .collect::<Vec<DNA>>();
-            match fun(dna) {
-                Ok(result) => {
-                    let buffer = result
-                        .chunks_exact(4)
-                        .map(|chunk| dna::DNA_to_binary(chunk.try_into().unwrap()))
-                        .collect::<Vec<u8>>();
-                    writer.write(&buffer)?;
-                }
-                Err(msg) => {
-                    return Err(io::Error::new(io::ErrorKind::Other, msg));
-                }
-            }
-            buffer.len()
-        };
-        reader.consume(length);
+        let length = reader
+            .by_ref()
+            .take(bytes as u64)
+            .read_to_end(&mut buffer)?;
         if length == 0 {
             break;
         }
+        let dna = buffer
+            .iter()
+            .flat_map(dna::binary_to_DNA)
+            .collect::<Vec<DNA>>();
+        match fun(dna) {
+            Ok(result) => {
+                let buffer = result
+                    .chunks_exact(4)
+                    .map(|chunk| dna::DNA_to_binary(chunk.try_into().unwrap()))
+                    .collect::<Vec<u8>>();
+                writer.write(&buffer)?;
+            }
+            Err(msg) => {
+                return Err(io::Error::new(io::ErrorKind::Other, msg));
+            }
+        }
+        buffer.clear();
     }
     return Ok(());
 }

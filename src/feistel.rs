@@ -86,8 +86,9 @@ pub fn encrypt(input: Vec<DNA>, key: [DNA; KEY_SIZE]) -> Vec<DNA> {
 pub fn decrypt(input: Vec<DNA>, key: [DNA; KEY_SIZE]) -> Result<Vec<DNA>, String> {
     if input.len() % INPUT_CHUNK_SIZE != 0 {
         return Err(format!(
-            "illegal input, length should be a multiple of {}",
-            INPUT_CHUNK_SIZE
+            "illegal input, length should be a multiple of {}, got {}",
+            INPUT_CHUNK_SIZE,
+            input.len()
         ));
     }
     let plaintext = input
