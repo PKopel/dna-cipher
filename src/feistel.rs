@@ -17,18 +17,19 @@ fn round(
     input: &[DNA; INPUT_SIZE],
     key: &[DNA; KEY_SIZE],
 ) -> ([DNA; SOURCE_SIZE], [DNA; TARGET_SIZE]) {
-    let mut intron = [DNA::A; TARGET_SIZE];
-    let mut intron_len = 0;
-
     let mut source = [DNA::A; SOURCE_SIZE];
     let mut target = [DNA::A; TARGET_SIZE];
     source.copy_from_slice(&input[0..SOURCE_SIZE]);
     target.copy_from_slice(&input[SOURCE_SIZE..INPUT_SIZE]);
+    let (intron_patterns, xor_selector) = key.split_at(KEY_SIZE - 2);
+
+    let mut intron = [DNA::A; TARGET_SIZE];
+    let mut intron_len = 0;
+    let mut intron_patterns = intron_patterns.chunks_exact(2);
 
     let mut source_idx = 0;
-    let mut key_idx = 0;
     while source_idx < SOURCE_SIZE - 1 && intron_len < TARGET_SIZE {
-        if source[source_idx] == key[key_idx] && source[source_idx + 1] == key[key_idx + 1] {
+        if intron_patterns.any(|pat| pat == &source[source_idx..source_idx + 2]) {
             let cp_len = min!(
                 SOURCE_SIZE - 1 - source_idx, // limit to the end of the source block
                 TARGET_SIZE - intron_len,     // limit to the size of target block
@@ -38,14 +39,13 @@ fn round(
                 .copy_from_slice(&source[source_idx..source_idx + cp_len]);
             intron_len += cp_len;
             source_idx += cp_len;
-            key_idx += 2;
         } else {
             source_idx += 1;
         }
     }
     trace!("intron_len = {}", intron_len);
     // use last two bases of key to select the xor definition
-    let dnaxor = get_xor(&key[KEY_SIZE - 2..KEY_SIZE]);
+    let dnaxor = get_xor(&xor_selector);
     for i in 0..TARGET_SIZE {
         // order is important - target must be the first argument
         target[i] = dnaxor(target[i], intron[i]);
