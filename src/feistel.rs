@@ -6,16 +6,17 @@ macro_rules! min {
     ($x: expr, $($z: expr),+) => (::std::cmp::min($x, min!($($z),*)));
 }
 
-pub(crate) const INPUT_SIZE: usize = 64;
+pub(crate) const KEY_SIZE: usize = 128;
+pub(crate) const INPUT_CHUNK_SIZE: usize = 64;
 const TARGET_SIZE: usize = 18;
 const SOURCE_SIZE: usize = 46;
-const KEY_SIZE: usize = 8;
+const KEY_CHUNK_SIZE: usize = 8;
 const INTRON_SIZE: usize = 6;
 // intron size of 6 with target size of 18 uses 3 out of 4 pairs in key
 
 fn round(
-    input: &[DNA; INPUT_SIZE],
-    key: &[DNA; KEY_SIZE],
+    input: &[DNA; INPUT_CHUNK_SIZE],
+    key: &[DNA; KEY_CHUNK_SIZE],
 ) -> ([DNA; SOURCE_SIZE], [DNA; TARGET_SIZE]) {
     let mut intron = [DNA::A; TARGET_SIZE];
     let mut intron_len = 0;
@@ -23,7 +24,7 @@ fn round(
     let mut source = [DNA::A; SOURCE_SIZE];
     let mut target = [DNA::A; TARGET_SIZE];
     source.copy_from_slice(&input[0..SOURCE_SIZE]);
-    target.copy_from_slice(&input[SOURCE_SIZE..INPUT_SIZE]);
+    target.copy_from_slice(&input[SOURCE_SIZE..INPUT_CHUNK_SIZE]);
 
     let mut source_idx = 0;
     let mut key_idx = 0;
@@ -45,7 +46,7 @@ fn round(
     }
     trace!("intron_len = {}", intron_len);
     // use last two bases of key to select the xor definition
-    let dnaxor = get_xor(&key[KEY_SIZE - 2..KEY_SIZE]);
+    let dnaxor = get_xor(&key[KEY_CHUNK_SIZE - 2..KEY_CHUNK_SIZE]);
     for i in 0..TARGET_SIZE {
         // order is important - target must be the first argument
         target[i] = dnaxor(target[i], intron[i]);
@@ -53,12 +54,12 @@ fn round(
     return (source, target);
 }
 
-pub fn encrypt(input: Vec<DNA>, key: Vec<DNA>) -> Vec<DNA> {
+pub fn encrypt(input: Vec<DNA>, key: [DNA; KEY_SIZE]) -> Vec<DNA> {
     let ciphertext = input
-        .chunks(INPUT_SIZE)
+        .chunks(INPUT_CHUNK_SIZE)
         .flat_map(|chunk| {
-            let mut input_chunk = [DNA::A; INPUT_SIZE];
-            let mut key_chunks = key.chunks_exact(KEY_SIZE).peekable();
+            let mut input_chunk = [DNA::A; INPUT_CHUNK_SIZE];
+            let mut key_chunks = key.chunks_exact(KEY_CHUNK_SIZE).peekable();
 
             // in case last chunk is shorter than INPUT_SIZE bases the rest will be filled with A's
             input_chunk[0..chunk.len()].copy_from_slice(chunk);
@@ -69,11 +70,11 @@ pub fn encrypt(input: Vec<DNA>, key: Vec<DNA>) -> Vec<DNA> {
                 if key_chunks.peek().is_some() {
                     // swap head with tail as per the Feistel algorithm
                     input_chunk[0..TARGET_SIZE].copy_from_slice(&t);
-                    input_chunk[TARGET_SIZE..INPUT_SIZE].copy_from_slice(&h);
+                    input_chunk[TARGET_SIZE..INPUT_CHUNK_SIZE].copy_from_slice(&h);
                 } else {
                     // for last round we need to keep the order to be able to decrypt the message
                     input_chunk[0..SOURCE_SIZE].copy_from_slice(&h);
-                    input_chunk[SOURCE_SIZE..INPUT_SIZE].copy_from_slice(&t);
+                    input_chunk[SOURCE_SIZE..INPUT_CHUNK_SIZE].copy_from_slice(&t);
                 }
             }
             return input_chunk.to_vec();
@@ -82,18 +83,18 @@ pub fn encrypt(input: Vec<DNA>, key: Vec<DNA>) -> Vec<DNA> {
     return ciphertext;
 }
 
-pub fn decrypt(input: Vec<DNA>, key: Vec<DNA>) -> Result<Vec<DNA>, String> {
-    if input.len() % INPUT_SIZE != 0 {
+pub fn decrypt(input: Vec<DNA>, key: [DNA; KEY_SIZE]) -> Result<Vec<DNA>, String> {
+    if input.len() % INPUT_CHUNK_SIZE != 0 {
         return Err(format!(
             "illegal input, length should be a multiple of {}",
-            INPUT_SIZE
+            INPUT_CHUNK_SIZE
         ));
     }
     let plaintext = input
-        .chunks_exact(INPUT_SIZE)
+        .chunks_exact(INPUT_CHUNK_SIZE)
         .flat_map(|chunk| {
-            let mut input_chunk = [DNA::A; INPUT_SIZE];
-            let mut key_chunks = key.chunks_exact(KEY_SIZE).rev().peekable();
+            let mut input_chunk = [DNA::A; INPUT_CHUNK_SIZE];
+            let mut key_chunks = key.chunks_exact(KEY_CHUNK_SIZE).rev().peekable();
 
             // each chunk will be of length INPUT_SIZE
             input_chunk.copy_from_slice(chunk);
@@ -104,15 +105,15 @@ pub fn decrypt(input: Vec<DNA>, key: Vec<DNA>) -> Result<Vec<DNA>, String> {
                 if key_chunks.peek().is_some() {
                     // swap head with tail as per the Feistel algorithm
                     input_chunk[0..SOURCE_SIZE].copy_from_slice(&h);
-                    input_chunk[SOURCE_SIZE..INPUT_SIZE].copy_from_slice(&t);
+                    input_chunk[SOURCE_SIZE..INPUT_CHUNK_SIZE].copy_from_slice(&t);
                     t.copy_from_slice(&input_chunk[0..TARGET_SIZE]);
-                    h.copy_from_slice(&input_chunk[TARGET_SIZE..INPUT_SIZE]);
+                    h.copy_from_slice(&input_chunk[TARGET_SIZE..INPUT_CHUNK_SIZE]);
                     input_chunk[0..SOURCE_SIZE].copy_from_slice(&h);
-                    input_chunk[SOURCE_SIZE..INPUT_SIZE].copy_from_slice(&t);
+                    input_chunk[SOURCE_SIZE..INPUT_CHUNK_SIZE].copy_from_slice(&t);
                 } else {
                     // for last round we need to keep the order as it is
                     input_chunk[0..SOURCE_SIZE].copy_from_slice(&h);
-                    input_chunk[SOURCE_SIZE..INPUT_SIZE].copy_from_slice(&t);
+                    input_chunk[SOURCE_SIZE..INPUT_CHUNK_SIZE].copy_from_slice(&t);
                 }
             }
             return input_chunk.to_vec();

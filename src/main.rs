@@ -1,8 +1,7 @@
-use clap::builder::Str;
 use clap::{Parser, Subcommand};
-use log::{debug, error};
-use std::fs::{read, File, OpenOptions};
-use std::io::{self, BufWriter};
+use log::debug;
+use std::fs::{File, OpenOptions};
+use std::io;
 use std::io::{stdin, stdout};
 use std::io::{BufRead, BufReader};
 use std::io::{Read, Write};
@@ -33,51 +32,51 @@ enum Commands {
     Decrypt,
 }
 
-fn read_file<T: Read>(mut reader: T) -> io::Result<Vec<DNA>> {
-    let mut buffer = Vec::new();
-
-    // Read file into vector.
-    reader.read_to_end(&mut buffer)?;
+fn read_key(mut file: File) -> io::Result<[DNA; feistel::KEY_SIZE]> {
+    let mut buffer = [0u8; feistel::KEY_SIZE / 4];
+    let bytes = file.read(&mut buffer)?;
+    if bytes != feistel::KEY_SIZE / 4 {
+        let msg = format!("wrong key size: expected 32B, got {}", bytes);
+        return Err(io::Error::new(io::ErrorKind::Other, msg));
+    };
     let result = buffer
         .iter()
         .flat_map(dna::binary_to_DNA)
         .collect::<Vec<DNA>>();
-    return Ok(result);
+    return Ok(result.try_into().unwrap());
 }
 
-fn write_file<T: Write>(mut writer: T, dna: Vec<DNA>) -> io::Result<usize> {
-    let buffer = dna
-        .chunks_exact(4)
-        .map(|chunk| dna::DNA_to_binary(chunk.try_into().unwrap()))
-        .collect::<Vec<u8>>();
-    return writer.write(&buffer);
-}
-
-fn process<R: Read, W: Write>(
-    reader: R,
-    mut writer: W,
-    fun: fn(Vec<DNA>) -> Result<Vec<DNA>, String>,
-) -> io::Result<()> {
-    let mut reader = BufReader::with_capacity(2 * feistel::INPUT_SIZE, reader);
+fn process<R, W, F>(reader: R, mut writer: W, fun: F) -> io::Result<()>
+where
+    R: Read,
+    W: Write,
+    F: Fn(Vec<DNA>) -> Result<Vec<DNA>, String>,
+{
+    let mut reader = BufReader::with_capacity(2 * feistel::INPUT_CHUNK_SIZE, reader);
     loop {
-        let buffer = reader.fill_buf()?;
-        if buffer.len() == 0 {
-            break;
-        }
-        let dna = buffer
-            .iter()
-            .flat_map(dna::binary_to_DNA)
-            .collect::<Vec<DNA>>();
-        let result = fun(dna);
-        match result {
-            Ok(result) => {
-                let buffer = result
-                    .chunks_exact(4)
-                    .map(|chunk| dna::DNA_to_binary(chunk.try_into().unwrap()))
-                    .collect::<Vec<u8>>();
-                writer.write(&buffer)?;
+        let length = {
+            let buffer = reader.fill_buf()?;
+            let dna = buffer
+                .iter()
+                .flat_map(dna::binary_to_DNA)
+                .collect::<Vec<DNA>>();
+            match fun(dna) {
+                Ok(result) => {
+                    let buffer = result
+                        .chunks_exact(4)
+                        .map(|chunk| dna::DNA_to_binary(chunk.try_into().unwrap()))
+                        .collect::<Vec<u8>>();
+                    writer.write(&buffer)?;
+                }
+                Err(msg) => {
+                    return Err(io::Error::new(io::ErrorKind::Other, msg));
+                }
             }
-            Err(msg) => error!("{}", msg),
+            buffer.len()
+        };
+        reader.consume(length);
+        if length == 0 {
+            break;
         }
     }
     return Ok(());
@@ -93,38 +92,29 @@ fn main() -> io::Result<()> {
         .init()
         .unwrap();
 
-    let dna = match args.input {
-        Some(file) => read_file(BufReader::new(File::open(file)?))?,
-        None => read_file(stdin())?,
-    };
     let key = match args.key {
-        Some(file) => read_file(BufReader::new(File::open(file)?))?,
-        None => read_file(stdin())?,
+        Some(file) => read_key(File::open(file)?)?,
+        None => read_key(File::open("key.txt")?)?,
+    };
+    let reader: Box<dyn Read> = match args.input {
+        Some(file) => Box::new(File::open(file)?),
+        None => Box::new(stdin()),
+    };
+    let writer: Box<dyn Write> = match args.output {
+        Some(file) => Box::new(OpenOptions::new().write(true).create(true).open(file)?),
+        None => Box::new(stdout()),
     };
 
     debug!("key = {:?}", key);
-    debug!("msg = {:?}", dna);
 
-    let result = if args.command == Commands::Encrypt {
-        Ok(feistel::encrypt(dna, key))
-    } else {
-        feistel::decrypt(dna, key)
+    let fun = |dna: Vec<DNA>| -> Result<Vec<DNA>, String> {
+        debug!("msg = {:?}", dna);
+        if args.command == Commands::Encrypt {
+            Ok(feistel::encrypt(dna, key))
+        } else {
+            feistel::decrypt(dna, key)
+        }
     };
 
-    match result {
-        Ok(result) => {
-            debug!("enc = {:?}", result);
-
-            match args.output {
-                Some(file) => write_file(
-                    OpenOptions::new().write(true).create(true).open(file)?,
-                    result,
-                ),
-                None => write_file(stdout(), result),
-            }?;
-        }
-        Err(msg) => error!("{}", msg),
-    }
-
-    return Ok(());
+    return process(reader, writer, fun);
 }
