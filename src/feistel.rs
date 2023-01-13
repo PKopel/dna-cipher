@@ -25,11 +25,12 @@ fn round(
 
     let mut intron = [DNA::A; TARGET_SIZE];
     let mut intron_len = 0;
-    let mut intron_patterns = intron_patterns.chunks_exact(2);
+    // let mut intron_patterns = intron_patterns.chunks_exact(2);
 
+    let mut intron_idx = 0;
     let mut source_idx = 0;
     while source_idx < SOURCE_SIZE - 1 && intron_len < TARGET_SIZE {
-        if intron_patterns.any(|pat| pat == &source[source_idx..source_idx + 2]) {
+        if intron_patterns[intron_idx..intron_idx + 2] == source[source_idx..source_idx + 2] {
             let cp_len = min!(
                 SOURCE_SIZE - 1 - source_idx, // limit to the end of the source block
                 TARGET_SIZE - intron_len,     // limit to the size of target block
@@ -39,6 +40,7 @@ fn round(
                 .copy_from_slice(&source[source_idx..source_idx + cp_len]);
             intron_len += cp_len;
             source_idx += cp_len;
+            intron_idx += 2;
         } else {
             source_idx += 1;
         }
@@ -46,7 +48,7 @@ fn round(
     trace!("intron_len = {}", intron_len);
     // use last two bases of key to select the xor definition
     let dnaxor = get_xor(&xor_selector);
-    for i in 0..TARGET_SIZE {
+    for i in 0..intron_len {
         // order is important - target must be the first argument
         target[i] = dnaxor(target[i], intron[i]);
     }
