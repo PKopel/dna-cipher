@@ -7,6 +7,7 @@ use std::io::{stdin, stdout};
 use std::io::{Read, Write};
 
 pub mod dna;
+pub mod sbox;
 use dna::DNA;
 
 pub mod feistel;

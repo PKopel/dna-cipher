@@ -115,16 +115,16 @@ impl Add for DNA {
 }
 
 #[allow(non_snake_case)]
-pub fn binary_to_DNA(b: &u8) -> Vec<DNA> {
+pub fn binary_to_DNA(b: &u8) -> [DNA; 4] {
     let mut x = *b;
-    let mut result = vec![];
-    for _ in 0..4 {
+    let mut result = [DNA::A; 4];
+    for i in 0..4 {
         // check first two bits
         match (x & 0b11000000) >> 6 {
-            0b00 => result.push(DNA::A),
-            0b01 => result.push(DNA::G),
-            0b10 => result.push(DNA::C),
-            0b11 => result.push(DNA::T),
+            0b00 => result[i] = DNA::A,
+            0b01 => result[i] = DNA::G,
+            0b10 => result[i] = DNA::C,
+            0b11 => result[i] = DNA::T,
             _ => {}
         };
         x = x << 2;
@@ -173,23 +173,23 @@ mod test {
     #[allow(non_snake_case)]
     fn test_binary_to_DNA() {
         assert_eq!(
-            binary_to_DNA(&(0b00011011 as u8)),
+            binary_to_DNA(&(0b00011011 as u8)).to_vec(),
             vec![DNA::A, DNA::G, DNA::C, DNA::T]
         );
         assert_eq!(
-            binary_to_DNA(&(0b00000000 as u8)),
+            binary_to_DNA(&(0b00000000 as u8)).to_vec(),
             vec![DNA::A, DNA::A, DNA::A, DNA::A]
         );
         assert_eq!(
-            binary_to_DNA(&(0b01010101 as u8)),
+            binary_to_DNA(&(0b01010101 as u8)).to_vec(),
             vec![DNA::G, DNA::G, DNA::G, DNA::G]
         );
         assert_eq!(
-            binary_to_DNA(&(0b10101010 as u8)),
+            binary_to_DNA(&(0b10101010 as u8)).to_vec(),
             vec![DNA::C, DNA::C, DNA::C, DNA::C]
         );
         assert_eq!(
-            binary_to_DNA(&(0b11111111 as u8)),
+            binary_to_DNA(&(0b11111111 as u8)).to_vec(),
             vec![DNA::T, DNA::T, DNA::T, DNA::T]
         );
     }
