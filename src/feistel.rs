@@ -53,7 +53,6 @@ fn round(
     // transform introns with sbox
     let intron: Vec<DNA> = intron
         .chunks_exact(4)
-        .into_iter()
         .flat_map(|chunk| sbox.get(chunk.try_into().unwrap()).into_iter())
         .collect();
 
