@@ -29,7 +29,7 @@ impl BitXor for DNA {
     type Output = Self;
 
     fn bitxor(self, rhs: Self) -> Self::Output {
-        return match self {
+        match self {
             Self::A => rhs,
             Self::C => match rhs {
                 DNA::A => DNA::C,
@@ -49,7 +49,7 @@ impl BitXor for DNA {
                 DNA::G => DNA::C,
                 DNA::T => DNA::A,
             },
-        };
+        }
     }
 }
 
@@ -57,7 +57,7 @@ impl Sub for DNA {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        return match self {
+        match self {
             Self::A => match rhs {
                 DNA::A => DNA::A,
                 DNA::C => DNA::C,
@@ -82,7 +82,7 @@ impl Sub for DNA {
                 DNA::G => DNA::C,
                 DNA::T => DNA::A,
             },
-        };
+        }
     }
 }
 
@@ -90,7 +90,7 @@ impl Add for DNA {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
-        return match self {
+        match self {
             Self::A => match rhs {
                 DNA::A => DNA::T,
                 DNA::C => DNA::A,
@@ -110,7 +110,7 @@ impl Add for DNA {
                 DNA::G => DNA::A,
                 DNA::T => DNA::C,
             },
-        };
+        }
     }
 }
 
@@ -129,7 +129,7 @@ pub fn binary_to_DNA(b: &u8) -> [DNA; 4] {
         };
         x <<= 2;
     }
-    return result;
+    result
 }
 
 #[allow(non_snake_case)]
@@ -144,7 +144,7 @@ pub fn DNA_to_binary(dna: &[DNA; 4]) -> u8 {
             DNA::T => 0b11,
         };
     }
-    return result;
+    result
 }
 
 #[cfg(test)]
@@ -173,23 +173,23 @@ mod test {
     #[allow(non_snake_case)]
     fn test_binary_to_DNA() {
         assert_eq!(
-            binary_to_DNA(&(0b00011011 as u8)).to_vec(),
+            binary_to_DNA(&0b00011011_u8).to_vec(),
             vec![DNA::A, DNA::G, DNA::C, DNA::T]
         );
         assert_eq!(
-            binary_to_DNA(&(0b00000000 as u8)).to_vec(),
+            binary_to_DNA(&0b00000000_u8).to_vec(),
             vec![DNA::A, DNA::A, DNA::A, DNA::A]
         );
         assert_eq!(
-            binary_to_DNA(&(0b01010101 as u8)).to_vec(),
+            binary_to_DNA(&0b01010101_u8).to_vec(),
             vec![DNA::G, DNA::G, DNA::G, DNA::G]
         );
         assert_eq!(
-            binary_to_DNA(&(0b10101010 as u8)).to_vec(),
+            binary_to_DNA(&0b10101010_u8).to_vec(),
             vec![DNA::C, DNA::C, DNA::C, DNA::C]
         );
         assert_eq!(
-            binary_to_DNA(&(0b11111111 as u8)).to_vec(),
+            binary_to_DNA(&0b11111111_u8).to_vec(),
             vec![DNA::T, DNA::T, DNA::T, DNA::T]
         );
     }
@@ -199,23 +199,23 @@ mod test {
     fn test_DNA_to_binary() {
         assert_eq!(
             DNA_to_binary(&[DNA::A, DNA::G, DNA::C, DNA::T]),
-            0b00011011 as u8
+            0b00011011_u8
         );
         assert_eq!(
             DNA_to_binary(&[DNA::A, DNA::A, DNA::A, DNA::A]),
-            0b00000000 as u8
+            0b00000000_u8
         );
         assert_eq!(
             DNA_to_binary(&[DNA::G, DNA::G, DNA::G, DNA::G]),
-            0b01010101 as u8
+            0b01010101_u8
         );
         assert_eq!(
             DNA_to_binary(&[DNA::C, DNA::C, DNA::C, DNA::C]),
-            0b10101010 as u8
+            0b10101010_u8
         );
         assert_eq!(
             DNA_to_binary(&[DNA::T, DNA::T, DNA::T, DNA::T]),
-            0b11111111 as u8
+            0b11111111_u8
         );
     }
 }

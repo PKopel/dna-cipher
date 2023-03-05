@@ -62,7 +62,7 @@ fn round(
         // order is important - target must be the first argument
         target[i] = dna_xor(target[i], intron[i]);
     }
-    return (source, target);
+    (source, target)
 }
 
 pub fn encrypt(input: Vec<DNA>, key: Vec<DNA>) -> Vec<DNA> {
@@ -92,7 +92,7 @@ pub fn encrypt(input: Vec<DNA>, key: Vec<DNA>) -> Vec<DNA> {
             input_chunk.to_vec()
         })
         .collect::<Vec<DNA>>();
-    return ciphertext;
+    ciphertext
 }
 
 pub fn decrypt(input: Vec<DNA>, key: Vec<DNA>) -> Result<Vec<DNA>, String> {
@@ -132,5 +132,5 @@ pub fn decrypt(input: Vec<DNA>, key: Vec<DNA>) -> Result<Vec<DNA>, String> {
             input_chunk.to_vec()
         })
         .collect::<Vec<DNA>>();
-    return Ok(plaintext);
+    Ok(plaintext)
 }

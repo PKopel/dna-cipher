@@ -7,7 +7,7 @@ pub struct SBox {
 
 #[inline]
 fn rotl8(x: u8, shift: u8) -> u8 {
-    return ((x) << (shift)) | ((x) >> (8 - (shift)));
+    ((x) << (shift)) | ((x) >> (8 - (shift)))
 }
 
 impl SBox {
@@ -38,11 +38,11 @@ impl SBox {
 
         /* 0 is a special case since it has no inverse */
         sbox[0] = binary_to_DNA(&0x63);
-        return SBox { sbox };
+        SBox { sbox }
     }
 
     pub fn get(&self, dna: &[DNA; 4]) -> [DNA; 4] {
         let index = dna::DNA_to_binary(dna);
-        return self.sbox[usize::from(index)];
+        self.sbox[usize::from(index)]
     }
 }

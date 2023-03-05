@@ -4,7 +4,7 @@ use super::DNA;
 
 // Only this is the 'full' xor, others are not comutative
 pub fn dnaxor_1(a: DNA, b: DNA) -> DNA {
-    return match a {
+    match a {
         DNA::A => b,
         DNA::C => match b {
             DNA::A => DNA::C,
@@ -24,11 +24,11 @@ pub fn dnaxor_1(a: DNA, b: DNA) -> DNA {
             DNA::G => DNA::C,
             DNA::T => DNA::A,
         },
-    };
+    }
 }
 
 pub fn dnaxor_2(a: DNA, b: DNA) -> DNA {
-    return match a {
+    match a {
         DNA::A => match b {
             DNA::A => DNA::A,
             DNA::C => DNA::C,
@@ -53,11 +53,11 @@ pub fn dnaxor_2(a: DNA, b: DNA) -> DNA {
             DNA::G => DNA::A,
             DNA::T => DNA::C,
         },
-    };
+    }
 }
 
 pub fn dnaxor_3(a: DNA, b: DNA) -> DNA {
-    return match a {
+    match a {
         DNA::A => match b {
             DNA::A => DNA::A,
             DNA::C => DNA::G,
@@ -82,11 +82,11 @@ pub fn dnaxor_3(a: DNA, b: DNA) -> DNA {
             DNA::G => DNA::G,
             DNA::T => DNA::A,
         },
-    };
+    }
 }
 
 pub fn dnaxor_4(a: DNA, b: DNA) -> DNA {
-    return match a {
+    match a {
         DNA::A => match b {
             DNA::A => DNA::A,
             DNA::C => DNA::G,
@@ -111,11 +111,11 @@ pub fn dnaxor_4(a: DNA, b: DNA) -> DNA {
             DNA::G => DNA::A,
             DNA::T => DNA::G,
         },
-    };
+    }
 }
 
 pub fn dnaxor_5(a: DNA, b: DNA) -> DNA {
-    return match a {
+    match a {
         DNA::A => match b {
             DNA::A => DNA::A,
             DNA::C => DNA::T,
@@ -140,11 +140,11 @@ pub fn dnaxor_5(a: DNA, b: DNA) -> DNA {
             DNA::G => DNA::G,
             DNA::T => DNA::C,
         },
-    };
+    }
 }
 
 pub fn dnaxor_6(a: DNA, b: DNA) -> DNA {
-    return match a {
+    match a {
         DNA::A => match b {
             DNA::A => DNA::A,
             DNA::C => DNA::T,
@@ -169,19 +169,19 @@ pub fn dnaxor_6(a: DNA, b: DNA) -> DNA {
             DNA::G => DNA::C,
             DNA::T => DNA::G,
         },
-    };
+    }
 }
 
 pub fn get_xor(key: &[DNA]) -> fn(DNA, DNA) -> DNA {
     trace!("get xor key = {:?}", key);
-    return match key {
+    match key {
         [DNA::A, DNA::A] | [DNA::C, DNA::C] | [DNA::G, DNA::G] | [DNA::T, DNA::T] => dnaxor_1,
         [DNA::A, DNA::C] | [DNA::A, DNA::G] | [DNA::A, DNA::T] => dnaxor_2,
         [DNA::C, DNA::A] | [DNA::C, DNA::G] | [DNA::C, DNA::T] => dnaxor_3,
         [DNA::G, DNA::A] | [DNA::G, DNA::C] | [DNA::G, DNA::T] => dnaxor_4,
         [DNA::T, DNA::C] | [DNA::T, DNA::G] | [DNA::T, DNA::A] => dnaxor_5,
         _ => dnaxor_6, // should never match
-    };
+    }
 }
 
 #[cfg(test)]

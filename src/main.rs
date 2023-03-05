@@ -40,7 +40,7 @@ fn read_file<T: Read>(mut reader: T) -> io::Result<Vec<DNA>> {
         .iter()
         .flat_map(dna::binary_to_DNA)
         .collect::<Vec<DNA>>();
-    return Ok(result);
+    Ok(result)
 }
 
 fn write_file<T: Write>(mut writer: T, dna: Vec<DNA>) -> io::Result<usize> {
@@ -48,7 +48,7 @@ fn write_file<T: Write>(mut writer: T, dna: Vec<DNA>) -> io::Result<usize> {
         .chunks_exact(4)
         .map(|chunk| dna::DNA_to_binary(chunk.try_into().unwrap()))
         .collect::<Vec<u8>>();
-    return writer.write(&buffer);
+    writer.write(&buffer)
 }
 
 fn main() -> io::Result<()> {
@@ -94,5 +94,5 @@ fn main() -> io::Result<()> {
         Err(msg) => error!("{}", msg),
     }
 
-    return Ok(());
+    Ok(())
 }
