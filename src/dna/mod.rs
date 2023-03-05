@@ -1,9 +1,9 @@
-pub mod xors;
-
 use std::{
     fmt::Debug,
     ops::{Add, BitXor, Sub},
 };
+
+pub mod xors;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum DNA {
@@ -118,16 +118,16 @@ impl Add for DNA {
 pub fn binary_to_DNA(b: &u8) -> [DNA; 4] {
     let mut x = *b;
     let mut result = [DNA::A; 4];
-    for i in 0..4 {
+    for base in &mut result {
         // check first two bits
-        match (x & 0b11000000) >> 6 {
-            0b00 => result[i] = DNA::A,
-            0b01 => result[i] = DNA::G,
-            0b10 => result[i] = DNA::C,
-            0b11 => result[i] = DNA::T,
-            _ => {}
+        *base = match (x & 0b11000000) >> 6 {
+            0b00 => DNA::A,
+            0b01 => DNA::G,
+            0b10 => DNA::C,
+            0b11 => DNA::T,
+            _ => break,
         };
-        x = x << 2;
+        x <<= 2;
     }
     return result;
 }
@@ -135,8 +135,8 @@ pub fn binary_to_DNA(b: &u8) -> [DNA; 4] {
 #[allow(non_snake_case)]
 pub fn DNA_to_binary(dna: &[DNA; 4]) -> u8 {
     let mut result = 0;
-    for b in dna.into_iter() {
-        result = result << 2;
+    for b in dna.iter() {
+        result <<= 2;
         result |= match b {
             DNA::A => 0b00,
             DNA::G => 0b01,

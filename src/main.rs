@@ -6,11 +6,9 @@ use std::io::BufReader;
 use std::io::{stdin, stdout};
 use std::io::{Read, Write};
 
+pub mod cipher;
 pub mod dna;
-pub mod sbox;
 use dna::DNA;
-
-pub mod feistel;
 
 #[derive(Parser, Debug, Clone)]
 #[command(author, version, about, long_about = None)]
@@ -76,9 +74,9 @@ fn main() -> io::Result<()> {
     debug!("msg = {:?}", dna);
 
     let result = if args.command == Commands::Encrypt {
-        Ok(feistel::encrypt(dna, key))
+        Ok(cipher::encrypt(dna, key))
     } else {
-        feistel::decrypt(dna, key)
+        cipher::decrypt(dna, key)
     };
 
     match result {

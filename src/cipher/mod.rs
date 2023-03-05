@@ -1,8 +1,8 @@
-use crate::{
-    dna::{xors::get_xor, DNA},
-    sbox::SBox,
-};
+use crate::dna::{xors::get_xor, DNA};
 use log::trace;
+
+mod sbox;
+use sbox::SBox;
 
 macro_rules! min {
     ($x: expr) => ($x);
@@ -57,7 +57,7 @@ fn round(
         .collect();
 
     // use last two bases of key to select the xor definition
-    let dna_xor = get_xor(&xor_selector);
+    let dna_xor = get_xor(xor_selector);
     for i in 0..TARGET_SIZE {
         // order is important - target must be the first argument
         target[i] = dna_xor(target[i], intron[i]);
@@ -89,7 +89,7 @@ pub fn encrypt(input: Vec<DNA>, key: Vec<DNA>) -> Vec<DNA> {
                     input_chunk[SOURCE_SIZE..INPUT_SIZE].copy_from_slice(&t);
                 }
             }
-            return input_chunk.to_vec();
+            input_chunk.to_vec()
         })
         .collect::<Vec<DNA>>();
     return ciphertext;
@@ -129,7 +129,7 @@ pub fn decrypt(input: Vec<DNA>, key: Vec<DNA>) -> Result<Vec<DNA>, String> {
                     input_chunk[SOURCE_SIZE..INPUT_SIZE].copy_from_slice(&t);
                 }
             }
-            return input_chunk.to_vec();
+            input_chunk.to_vec()
         })
         .collect::<Vec<DNA>>();
     return Ok(plaintext);

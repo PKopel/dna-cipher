@@ -42,7 +42,7 @@ impl SBox {
     }
 
     pub fn get(&self, dna: &[DNA; 4]) -> [DNA; 4] {
-        let index = dna::DNA_to_binary(&dna);
+        let index = dna::DNA_to_binary(dna);
         return self.sbox[usize::from(index)];
     }
 }
