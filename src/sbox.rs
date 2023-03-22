@@ -1,4 +1,5 @@
 use crate::dna::{self, binary_to_DNA, DNA};
+use std::ops::Index;
 
 #[derive(Copy, Clone, Debug)]
 pub struct SBox {
@@ -40,9 +41,13 @@ impl SBox {
         sbox[0] = binary_to_DNA(&0x63);
         SBox { sbox }
     }
+}
 
-    pub fn get(&self, dna: &[DNA; 4]) -> [DNA; 4] {
-        let index = dna::DNA_to_binary(dna);
-        self.sbox[usize::from(index)]
+impl Index<&[DNA; 4]> for SBox {
+    type Output = [DNA; 4];
+
+    fn index(&self, index: &[DNA; 4]) -> &Self::Output {
+        let index = dna::DNA_to_binary(index);
+        &self.sbox[usize::from(index)]
     }
 }

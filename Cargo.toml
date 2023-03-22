@@ -11,3 +11,11 @@ clap = { version = "4.0", features = ["derive"] }
 log = "0.4.17"
 phf = { version = "0.11", features = ["macros"] }
 stderrlog = "0.5.4"
+
+[lib]
+name = "dnac"
+path = "src/lib.rs"
+
+[[bin]]
+name = "dnac"
+path = "src/bin/dnac.rs"

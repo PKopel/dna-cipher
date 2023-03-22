@@ -1,5 +1,7 @@
-use crate::dna::{xors::get_xor, DNA};
 use log::trace;
+
+pub mod dna;
+use dna::{xors::get_xor, DNA};
 
 mod sbox;
 use sbox::SBox;
@@ -18,7 +20,7 @@ const INTRON_SIZE: usize = 6;
 
 fn round(input: &[DNA; INPUT_SIZE], key: &[DNA; KEY_SIZE], sbox: SBox) -> [DNA; INPUT_SIZE] {
     let mut result = [DNA::A; INPUT_SIZE];
-    result.copy_from_slice(&input.as_slice());
+    result.copy_from_slice(input.as_slice());
     let (source, target) = result.split_at_mut(SOURCE_SIZE);
     let (intron_patterns, xor_selector) = key.split_at(KEY_SIZE - 2);
 
@@ -48,7 +50,7 @@ fn round(input: &[DNA; INPUT_SIZE], key: &[DNA; KEY_SIZE], sbox: SBox) -> [DNA; 
     // transform introns with sbox
     let intron: Vec<DNA> = intron
         .chunks_exact(4)
-        .flat_map(|chunk| sbox.get(chunk.try_into().unwrap()).into_iter())
+        .flat_map(|chunk| sbox[chunk.try_into().unwrap()].into_iter())
         .collect();
 
     // use last two bases of key to select the xor definition
