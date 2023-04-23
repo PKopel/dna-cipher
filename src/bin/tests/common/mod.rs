@@ -19,7 +19,7 @@ impl Iterator for Bits {
     type Item = [u8; INPUT_SIZE_BYTES];
 
     fn next(&mut self) -> Option<Self::Item> {
-        if self.n_bit < INPUT_SIZE_BYTES {
+        if self.n_bit < INPUT_SIZE_BYTES * 8 {
             let u8_idx = self.n_bit / 8;
             let mask = 0b1 << (self.n_bit % 8);
 

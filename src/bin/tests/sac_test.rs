@@ -1,3 +1,5 @@
+use std::io;
+
 use common::{check_ones, encrypt, xor_array};
 use kdam::tqdm;
 use rayon::prelude::{ParallelBridge, ParallelIterator};
@@ -36,13 +38,12 @@ fn x2_test(matrix: [[u32; 128]; 128]) -> f64 {
         .sum()
 }
 
-#[test]
-fn sac_test() {
+fn main() -> io::Result<()> {
     let mut sac_matrix = [[0; 128]; 128];
-    let data = include_bytes!("common/tests.blb");
+    let data = include_bytes!("common/texts_16B.blb");
     for input in tqdm!(data.chunks_exact(16)) {
-        let mut bits = common::Bits::new(input.try_into().unwrap());
-        let fst_output = encrypt(bits.next().unwrap());
+        let bits = common::Bits::new(input.try_into().unwrap());
+        let fst_output = encrypt(input.try_into().unwrap());
         bits.zip(&mut sac_matrix)
             .par_bridge()
             .for_each(|(bits, results)| {
@@ -53,6 +54,8 @@ fn sac_test() {
                 }
             });
     }
+    println!("{:?}", sac_matrix);
     let val = x2_test(sac_matrix);
-    println!("{}", val)
+    println!("{}", val);
+    Ok(())
 }
