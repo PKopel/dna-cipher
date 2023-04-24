@@ -28,7 +28,7 @@ jobs:
         run: |
           mkdir src/bin/tests/common/data
           head -c 32 /dev/urandom > src/bin/tests/common/data/key_32B.blb
-          head -c 16777216 /dev/urandom > src/bin/tests/common/data/texts_16B.blb
+          head -c 16777216 /dev/urandom > src/bin/tests/common/data/texts_16MB.blb
 
       - name: Build
         run: cargo build --bin dnac --verbose
