@@ -41,7 +41,9 @@ pub fn encrypt(bits: [u8; INPUT_SIZE_BYTES]) -> [u8; INPUT_SIZE_BYTES] {
         .flat_map(binary_to_DNA)
         .collect();
     let result = bits.iter().flat_map(binary_to_DNA).collect::<Vec<DNA>>();
-    dnac::encrypt(result, key)
+    let cipher = dnac::DNAC::new(key);
+    cipher
+        .encrypt(result)
         .chunks_exact(4)
         .map(|chunk| DNA_to_binary(chunk.try_into().unwrap()))
         .collect::<Vec<u8>>()

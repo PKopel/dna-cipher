@@ -184,6 +184,14 @@ pub fn get_xor(key: &[DNA]) -> fn(DNA, DNA) -> DNA {
     }
 }
 
+pub fn word_xor(a: [DNA; 4], b: [DNA; 4]) -> [DNA; 4] {
+    let mut result = [DNA::A; 4];
+    for i in 0..4 {
+        result[i] = a[i] ^ b[i];
+    }
+    result
+}
+
 #[cfg(test)]
 mod test {
     use super::*;

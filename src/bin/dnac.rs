@@ -6,7 +6,7 @@ use std::io::BufReader;
 use std::io::{stdin, stdout};
 use std::io::{Read, Write};
 
-use dnac::{dna, dna::DNA};
+use dnac::{dna, dna::DNA, DNAC};
 
 #[derive(Parser, Debug, Clone)]
 #[command(author, version, about, long_about = None)]
@@ -71,10 +71,12 @@ fn main() -> io::Result<()> {
     debug!("key = {:?}", key);
     debug!("msg = {:?}", dna);
 
+    let cipher = DNAC::new(key);
+
     let result = if args.command == Commands::Encrypt {
-        Ok(dnac::encrypt(dna, key))
+        Ok(cipher.encrypt(dna))
     } else {
-        dnac::decrypt(dna, key)
+        cipher.decrypt(dna)
     };
 
     match result {

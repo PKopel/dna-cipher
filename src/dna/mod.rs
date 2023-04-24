@@ -114,6 +114,20 @@ impl Add for DNA {
     }
 }
 
+pub struct DNAWord(pub [DNA; 4]);
+
+impl BitXor for DNAWord {
+    type Output = Self;
+
+    fn bitxor(self, rhs: Self) -> Self::Output {
+        let mut result = [DNA::A; 4];
+        for i in 0..4 {
+            result[i] = self.0[i] ^ rhs.0[i];
+        }
+        DNAWord(result)
+    }
+}
+
 #[allow(non_snake_case)]
 pub fn binary_to_DNA(b: &u8) -> [DNA; 4] {
     let mut x = *b;

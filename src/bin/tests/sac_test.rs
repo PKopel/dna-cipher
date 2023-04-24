@@ -43,7 +43,7 @@ fn x2_test(matrix: [[u32; 128]; 128]) -> f64 {
 
 fn main() -> io::Result<()> {
     let mut sac_matrix = [[0; 128]; 128];
-    let data = include_bytes!("common/data/texts_16B.blb");
+    let data = include_bytes!("common/data/texts_16MB.blb");
     // let key = GenericArray::from([0u8; 16]);
     // let cipher = Aes128::new(&key);
     for input in tqdm!(data.chunks_exact(16)) {
