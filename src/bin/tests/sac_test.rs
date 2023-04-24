@@ -4,6 +4,9 @@ use common::{check_ones, encrypt, xor_array};
 use kdam::tqdm;
 use rayon::prelude::{ParallelBridge, ParallelIterator};
 
+// use aes::cipher::{generic_array::GenericArray, BlockCipher, BlockDecrypt, BlockEncrypt, KeyInit};
+// use aes::Aes128;
+
 mod common;
 
 fn sac_probabilities(x: usize) -> f64 {
@@ -40,21 +43,32 @@ fn x2_test(matrix: [[u32; 128]; 128]) -> f64 {
 
 fn main() -> io::Result<()> {
     let mut sac_matrix = [[0; 128]; 128];
-    let data = include_bytes!("common/texts_16B.blb");
+    let data = include_bytes!("common/data/texts_16B.blb");
+    // let key = GenericArray::from([0u8; 16]);
+    // let cipher = Aes128::new(&key);
     for input in tqdm!(data.chunks_exact(16)) {
-        let bits = common::Bits::new(input.try_into().unwrap());
+        let input_bits = input.try_into().unwrap();
+        let bits = common::Bits::new(input_bits);
+        // let mut fst_block = GenericArray::from(input_bits);
+        // cipher.encrypt_block(&mut fst_block);
         let fst_output = encrypt(input.try_into().unwrap());
         bits.zip(&mut sac_matrix)
             .par_bridge()
             .for_each(|(bits, results)| {
+                // let mut block = GenericArray::from(bits);
+                // cipher.encrypt_block(&mut block);
                 let output = encrypt(bits);
+                // let xored = xor_array(
+                //     fst_block.as_slice().try_into().unwrap(),
+                //     block.as_slice().try_into().unwrap(),
+                // );
                 let xored = xor_array(fst_output, output);
                 for (i, v) in xored.iter().flat_map(check_ones).enumerate() {
                     results[i] += v;
                 }
             });
     }
-    println!("{:?}", sac_matrix);
+    // println!("{:?}", sac_matrix);
     let val = x2_test(sac_matrix);
     println!("{}", val);
     Ok(())
