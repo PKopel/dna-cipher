@@ -44,7 +44,7 @@ impl DNAC {
         let n = original.len() / 4;
         let r = n + 15;
         let rcs = vec![0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36];
-        let mut rcs = rcs.iter().map(binary_to_DNA);
+        let mut rcs = rcs.iter().map(binary_to_DNA).cycle();
 
         let mut expanded = vec![[DNA::A; 4]; r * 4];
         let mut expanded_len = n * 4;
