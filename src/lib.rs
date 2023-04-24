@@ -197,7 +197,7 @@ mod test {
     use rand::Rng;
     #[test]
     fn test_encrypt_decrypt() {
-        let random_bytes = rand::thread_rng().gen::<[u8; 16]>();
+        let random_bytes = rand::thread_rng().gen::<[u8; 32]>();
         let random_msg = rand::thread_rng().gen::<[u8; 16]>();
         let key = random_bytes
             .iter()
