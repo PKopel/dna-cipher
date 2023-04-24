@@ -8,10 +8,7 @@ pub struct Bits {
 
 impl Bits {
     pub fn new(bits: [u8; INPUT_SIZE_BYTES]) -> Self {
-        Bits {
-            bits: bits,
-            n_bit: 0,
-        }
+        Bits { bits, n_bit: 0 }
     }
 }
 
@@ -23,7 +20,7 @@ impl Iterator for Bits {
             let u8_idx = self.n_bit / 8;
             let mask = 0b10000000 >> (self.n_bit % 8);
 
-            let mut new_bits = self.bits.clone();
+            let mut new_bits = self.bits;
             new_bits[u8_idx] ^= mask;
 
             self.n_bit += 1;
@@ -36,7 +33,7 @@ impl Iterator for Bits {
 }
 
 pub fn encrypt(bits: [u8; INPUT_SIZE_BYTES]) -> [u8; INPUT_SIZE_BYTES] {
-    let key = include_bytes!("data/key_128B.blb")
+    let key = include_bytes!("data/key_32B.blb")
         .iter()
         .flat_map(binary_to_DNA)
         .collect();

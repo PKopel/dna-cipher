@@ -68,7 +68,7 @@ fn main() -> io::Result<()> {
                 }
             });
     }
-    // println!("{:?}", sac_matrix);
+    println!("{:?}", sac_matrix);
     let val = x2_test(sac_matrix);
     println!("{}", val);
     Ok(())

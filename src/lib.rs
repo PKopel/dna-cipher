@@ -2,8 +2,9 @@ use log::trace;
 
 pub mod dna;
 use dna::{
+    binary_to_DNA,
     xors::{get_xor, word_xor},
-    DNAWord, DNA,
+    DNA,
 };
 
 mod sbox;
@@ -18,7 +19,7 @@ const TARGET_SIZE: usize = 20;
 const SOURCE_SIZE: usize = 44;
 const INPUT_SIZE: usize = 64;
 const KEY_SIZE: usize = 8;
-const INTRON_SIZE: usize = 6;
+const INTRON_SIZE: usize = 8;
 // intron size of 6 with target size of 18 uses 3 out of 4 pairs in key
 
 pub struct DNAC {
@@ -28,30 +29,55 @@ pub struct DNAC {
 
 impl DNAC {
     pub fn new(key: Vec<DNA>) -> DNAC {
+        let sbox = SBox::new();
         DNAC {
-            sbox: SBox::new(),
-            key: key,
+            sbox: sbox,
+            key: DNAC::expand_key(key, sbox),
         }
     }
 
-    fn expand_key(&self, key: &[DNA; KEY_SIZE]) -> [DNA; TARGET_SIZE] {
-        let (fst, snd) = key.split_at(4);
-        let mut fst = fst.try_into().unwrap();
-        let mut snd = snd.try_into().unwrap();
-        let mut expanded = [DNA::A; TARGET_SIZE];
+    fn expand_key(key: Vec<DNA>, sbox: SBox) -> Vec<DNA> {
+        let original = key
+            .chunks_exact(4)
+            .map(|chunk| chunk.try_into().unwrap())
+            .collect::<Vec<[DNA; 4]>>();
+        let n = original.len() / 4;
+        let r = n + 15;
+        let rcs = vec![0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36];
+        let mut rcs = rcs.iter().map(binary_to_DNA);
 
-        expanded[..KEY_SIZE].copy_from_slice(key);
-        let mut expanded_len = KEY_SIZE;
+        let mut expanded = vec![[DNA::A; 4]; r * 4];
+        let mut expanded_len = n * 4;
+        expanded[0..expanded_len].copy_from_slice(&original[..]);
 
-        while expanded_len < TARGET_SIZE {
-            fst = word_xor(fst, self.sbox[&snd]);
-            snd = word_xor(snd, fst);
-            expanded[expanded_len..expanded_len + 4].copy_from_slice(&fst);
-            expanded[expanded_len + 4..expanded_len + 8].copy_from_slice(&snd);
-            expanded_len += 8;
+        while expanded_len < r * 4 {
+            match expanded_len % n {
+                0 => {
+                    let rci = rcs.next().unwrap();
+                    for i in 0..4 {
+                        expanded[expanded_len + i] = word_xor(
+                            word_xor(
+                                expanded[expanded_len - n * 4 + i],
+                                sbox[&expanded[expanded_len - 4 + i]],
+                            ),
+                            rci,
+                        )
+                    }
+                }
+
+                _ => {
+                    for i in 0..4 {
+                        expanded[expanded_len + i] = word_xor(
+                            expanded[expanded_len - 4 + i],
+                            expanded[expanded_len - n * 4 + i],
+                        )
+                    }
+                }
+            }
+            expanded_len += 4;
         }
 
-        expanded
+        expanded.iter().flat_map(|w| w.to_vec()).collect()
     }
 
     fn round(&self, input: &[DNA; INPUT_SIZE], key: &[DNA; KEY_SIZE]) -> [DNA; INPUT_SIZE] {
@@ -60,12 +86,12 @@ impl DNAC {
         let (source, target) = result.split_at_mut(SOURCE_SIZE);
         let (intron_patterns, xor_selector) = key.split_at(KEY_SIZE - 2);
 
-        let mut intron = self.expand_key(key);
+        let mut intron = [DNA::A; TARGET_SIZE];
         let mut intron_len = 0;
 
         let mut intron_idx = 0;
         let mut source_idx = 0;
-        while source_idx < SOURCE_SIZE - 1 && intron_len < TARGET_SIZE - 2 {
+        while source_idx < SOURCE_SIZE - 1 && intron_idx < 6 {
             if intron_patterns[intron_idx..intron_idx + 2] == source[source_idx..source_idx + 2] {
                 let cp_len = min!(
                     SOURCE_SIZE - 1 - source_idx, // limit to the end of the source block
@@ -98,7 +124,7 @@ impl DNAC {
         result
     }
 
-    pub fn encrypt(self, input: Vec<DNA>) -> Vec<DNA> {
+    pub fn encrypt(&self, input: Vec<DNA>) -> Vec<DNA> {
         let ciphertext = input
             .chunks(INPUT_SIZE)
             .flat_map(|chunk| {
@@ -128,7 +154,7 @@ impl DNAC {
         ciphertext
     }
 
-    pub fn decrypt(self, input: Vec<DNA>) -> Result<Vec<DNA>, String> {
+    pub fn decrypt(&self, input: Vec<DNA>) -> Result<Vec<DNA>, String> {
         if input.len() % INPUT_SIZE != 0 {
             return Err(format!(
                 "illegal input, length should be a multiple of {}",
@@ -162,5 +188,26 @@ impl DNAC {
             })
             .collect::<Vec<DNA>>();
         Ok(plaintext)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use rand::Rng;
+    #[test]
+    fn test_encrypt_decrypt() {
+        let random_bytes = rand::thread_rng().gen::<[u8; 16]>();
+        let random_msg = rand::thread_rng().gen::<[u8; 16]>();
+        let key = random_bytes
+            .iter()
+            .flat_map(binary_to_DNA)
+            .collect::<Vec<DNA>>();
+        let msg = random_msg
+            .iter()
+            .flat_map(binary_to_DNA)
+            .collect::<Vec<DNA>>();
+        let cipher = DNAC::new(key);
+        assert_eq!(msg, cipher.decrypt(cipher.encrypt(msg.clone())).unwrap());
     }
 }
