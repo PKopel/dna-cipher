@@ -35,7 +35,7 @@ impl Iterator for Bits {
 }
 
 pub fn encrypt(bits: [u8; INPUT_SIZE_BYTES]) -> [u8; INPUT_SIZE_BYTES] {
-    let key = include_bytes!("data/key_16B.blb")
+    let key = include_bytes!("data/key_32B.blb")
         .iter()
         .flat_map(binary_to_DNA)
         .collect();
