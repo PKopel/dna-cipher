@@ -42,7 +42,10 @@ impl DNAC {
             .map(|chunk| chunk.try_into().unwrap())
             .collect::<Vec<[DNA; 4]>>();
         let n = original.len() / 4;
-        let r = n + 15;
+        let r = 23; // based on empirical evidence
+        if n >= r {
+            return key;
+        }
         let rcs = vec![0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36];
         let mut rcs = rcs.iter().map(binary_to_DNA).cycle();
 

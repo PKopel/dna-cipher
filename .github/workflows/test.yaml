@@ -29,6 +29,7 @@ jobs:
           mkdir tests/common/data
           head -c 32 /dev/urandom > tests/common/data/key_32B.blb
           head -c 16777216 /dev/urandom > tests/common/data/texts_16MB.blb
+          ln -s tests/common/data benches/data
 
       - name: Build
         run: cargo build --bin dnac --verbose

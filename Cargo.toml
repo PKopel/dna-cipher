@@ -27,6 +27,6 @@ path = "src/lib.rs"
 name = "dnac"
 path = "src/bin/dnac.rs"
 
-# [[bin]]
-# name = "sac-test"
-# path = "src/bin/tests/sac_test.rs"
+[[bin]]
+name = "bench"
+path = "benches/dnac_vs_aes.rs"

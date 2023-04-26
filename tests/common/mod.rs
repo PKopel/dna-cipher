@@ -2,7 +2,7 @@
 
 use dnac::dna::{DNA, *};
 
-const INPUT_SIZE_BYTES: usize = 16;
+pub const INPUT_SIZE_BYTES: usize = 16;
 pub struct Bits {
     bits: [u8; INPUT_SIZE_BYTES],
     n_bit: usize,
@@ -35,7 +35,7 @@ impl Iterator for Bits {
 }
 
 pub fn encrypt(bits: [u8; INPUT_SIZE_BYTES]) -> [u8; INPUT_SIZE_BYTES] {
-    let key = include_bytes!("data/key_32B.blb")
+    let key = include_bytes!("data/key_16B.blb")
         .iter()
         .flat_map(binary_to_DNA)
         .collect();
