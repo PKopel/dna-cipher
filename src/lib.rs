@@ -7,7 +7,7 @@ use dna::{
     DNA,
 };
 
-mod sbox;
+pub mod sbox;
 use sbox::SBox;
 
 macro_rules! min {
@@ -24,7 +24,7 @@ const INTRON_SIZE: usize = 8;
 
 pub struct DNAC {
     sbox: SBox,
-    key: Vec<DNA>,
+    key: Vec<[DNA; KEY_SIZE]>,
 }
 
 impl DNAC {
@@ -36,7 +36,7 @@ impl DNAC {
         }
     }
 
-    fn expand_key(key: Vec<DNA>, sbox: SBox) -> Vec<DNA> {
+    fn expand_key(key: Vec<DNA>, sbox: SBox) -> Vec<[DNA; KEY_SIZE]> {
         let original = key
             .chunks_exact(4)
             .map(|chunk| chunk.try_into().unwrap())
@@ -44,7 +44,10 @@ impl DNAC {
         let n = original.len() / 4;
         let r = 23; // based on empirical evidence
         if n >= r {
-            return key;
+            return key
+                .chunks_exact(KEY_SIZE)
+                .map(|chunk| chunk.try_into().unwrap())
+                .collect();
         }
         let rcs = vec![0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36];
         let mut rcs = rcs.iter().map(binary_to_DNA).cycle();
@@ -80,7 +83,13 @@ impl DNAC {
             expanded_len += 4;
         }
 
-        expanded.iter().flat_map(|w| w.to_vec()).collect()
+        expanded
+            .iter()
+            .flat_map(|w| w.to_vec())
+            .collect::<Vec<DNA>>()
+            .chunks_exact(KEY_SIZE)
+            .map(|chunk| chunk.try_into().unwrap())
+            .collect()
     }
 
     fn round(&self, input: &[DNA; INPUT_SIZE], key: &[DNA; KEY_SIZE]) -> [DNA; INPUT_SIZE] {
@@ -112,18 +121,18 @@ impl DNAC {
         }
         trace!("intron_len = {}", intron_len);
 
-        // transform introns with sbox
-        let intron: Vec<DNA> = intron
-            .chunks_exact(4)
-            .flat_map(|chunk| self.sbox[chunk.try_into().unwrap()].into_iter())
-            .collect();
-
         // use last two bases of key to select the xor definition
         let dna_xor = get_xor(xor_selector);
-        for i in 0..TARGET_SIZE {
+
+        intron
+            // transform introns with sbox
+            .chunks_exact(4)
+            .flat_map(|chunk| self.sbox[chunk.try_into().unwrap()].into_iter())
+            .enumerate()
             // order is important - target must be the first argument
-            target[i] = dna_xor(target[i], intron[i]);
-        }
+            .for_each(|(i, intron_base)| target[i] = dna_xor(target[i], intron_base));
+
+        // return result table with both source and target blocks
         result
     }
 
@@ -132,14 +141,14 @@ impl DNAC {
             .chunks(INPUT_SIZE)
             .flat_map(|chunk| {
                 let mut input_chunk = [DNA::A; INPUT_SIZE];
-                let mut key_chunks = self.key.chunks_exact(KEY_SIZE).peekable();
+                let mut key_chunks = self.key.iter().peekable();
 
                 // in case last chunk is shorter than INPUT_SIZE bases the rest will be filled with A's
                 input_chunk[0..chunk.len()].copy_from_slice(chunk);
 
                 while let Some(key_chunk) = key_chunks.next() {
                     // try_into changes slices to arrays of fixed length
-                    let result = self.round(&input_chunk, key_chunk.try_into().unwrap());
+                    let result = self.round(&input_chunk, key_chunk);
                     if key_chunks.peek().is_some() {
                         // swap head with tail as per the Feistel algorithm
                         input_chunk[0..TARGET_SIZE]
@@ -168,14 +177,14 @@ impl DNAC {
             .chunks_exact(INPUT_SIZE)
             .flat_map(|chunk| {
                 let mut input_chunk = [DNA::A; INPUT_SIZE];
-                let mut key_chunks = self.key.chunks_exact(KEY_SIZE).rev().peekable();
+                let mut key_chunks = self.key.iter().rev().peekable();
 
                 // each chunk will be of length INPUT_SIZE
                 input_chunk.copy_from_slice(chunk);
 
                 while let Some(key_chunk) = key_chunks.next() {
                     // try_into changes slices to arrays of fixed length
-                    let result = self.round(&input_chunk, key_chunk.try_into().unwrap());
+                    let result = self.round(&input_chunk, key_chunk);
                     if key_chunks.peek().is_some() {
                         // swap head with tail as per the Feistel algorithm
                         input_chunk[0..SOURCE_SIZE]
