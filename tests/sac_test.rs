@@ -9,18 +9,10 @@ use rayon::prelude::{ParallelBridge, ParallelIterator};
 
 mod common;
 
-fn sac_probabilities(x: usize) -> f64 {
-    (match x {
-        0 => 0.200224,
-        1 => 0.199937,
-        2 => 0.199677,
-        3 => 0.199937,
-        _ => 0.200224,
-    }) * 16384f64 // 128 * 128
-}
+const PROBABILITIES: [f64; 5] = [0.200224, 0.199937, 0.199677, 0.199937, 0.200224];
 
 fn x2_test(matrix: [[u32; 128]; 128]) -> f64 {
-    let mut bins = vec![0; 5];
+    let mut bins = [0; 5];
     for x in matrix.iter().flat_map(|row| row.iter()) {
         match x {
             _ if *x < 523857 => bins[0] += 1,
@@ -34,7 +26,7 @@ fn x2_test(matrix: [[u32; 128]; 128]) -> f64 {
     bins.iter()
         .enumerate()
         .map(|(i, l)| {
-            e = sac_probabilities(i);
+            e = PROBABILITIES[i] * 16384.0;
             ((*l as f64) - e).powf(2.0) / e
         })
         .sum()
@@ -71,5 +63,5 @@ fn sac_test() {
     // println!("{:?}", sac_matrix);
     fs::write("sac_matrix.txt", format!("{:?}", sac_matrix)).expect("Error saving SAC matrix");
     let val = x2_test(sac_matrix);
-    assert!(val < 11.345)
+    assert!(val < 11.345) // based on lookup table value for 4 degrees
 }

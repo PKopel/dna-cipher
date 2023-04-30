@@ -15,9 +15,10 @@ kdam = "0.3.0"
 rayon = "1.7.0"
 aes = "0.8.2"
 rand = "0.8.5"
+itertools = "0.10.5"
 
 [profile.test]
-# opt-level = 3
+opt-level = 3
 
 [lib]
 name = "dnac"
