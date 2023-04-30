@@ -7,7 +7,7 @@ use dna::{
     DNA,
 };
 
-pub mod sbox;
+mod sbox;
 use sbox::SBox;
 
 macro_rules! min {

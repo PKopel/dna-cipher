@@ -15,6 +15,41 @@ fn powerset<T>(s: &[T]) -> Vec<Vec<&T>> {
         .collect()
 }
 
+fn compute_rank(mut a: Vec<Vec<u8>>) -> usize {
+    let n = a.len();
+    let m = a[0].len();
+
+    let mut rank = 0;
+    let mut row_selected = vec![false; n];
+    for i in 0..m {
+        let mut j = 0;
+        for k in 0..n {
+            if !row_selected[k] && a[k][i] > 0 {
+                j = k;
+                break;
+            }
+        }
+
+        if j != n {
+            rank += 1;
+            row_selected[j] = true;
+            for p in i + 1..m {
+                if a[j][i] != 0 {
+                    a[j][p] = (a[j][p] / a[j][i]) % 2;
+                }
+            }
+            for k in 0..n {
+                if k != j && a[k][i] > 0 {
+                    for p in i + 1..m {
+                        a[k][p] = (2 + a[k][p] - (a[j][p] * a[k][i]) % 2) % 2;
+                    }
+                }
+            }
+        }
+    }
+    return rank;
+}
+
 #[test]
 fn linear_span_test() {
     let zeroes = [0u8; 16];
@@ -33,6 +68,21 @@ fn linear_span_test() {
         .collect();
     let linspan_matrix = inputs
         .iter()
-        .map(|&x| encrypt(x))
-        .collect::<Vec<[u8; INPUT_SIZE_BYTES]>>();
+        .map(|&x| {
+            encrypt(x)
+                .iter()
+                .flat_map(|byte| {
+                    let mut bits = [0; 8];
+                    let mut byte = *byte;
+                    for i in 0..8 {
+                        bits[i] = if byte & 0b1000_0000 > 0 { 1 } else { 0 };
+                        byte <<= 1;
+                    }
+                    bits
+                })
+                .collect::<Vec<u8>>()
+        })
+        .collect::<Vec<Vec<u8>>>();
+    let rank = compute_rank(linspan_matrix);
+    println!("{}", rank);
 }
