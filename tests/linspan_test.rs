@@ -5,24 +5,11 @@ use rand::{seq::SliceRandom, thread_rng};
 use rayon::prelude::{ParallelBridge, ParallelIterator};
 
 mod common;
-use common::{encrypt, xor_array, Bits, INPUT_SIZE_BYTES};
+use common::{encrypt, powerset, xor_array, BitsOne, INPUT_SIZE_BYTES};
 use kdam::tqdm;
 
 // use aes::cipher::{generic_array::GenericArray, BlockEncrypt, KeyInit};
 // use aes::Aes128;
-
-fn powerset(s: &[[u8; 16]]) -> Vec<Vec<&[u8; 16]>> {
-    (0..2usize.pow(s.len() as u32))
-        .par_bridge()
-        .map(|i| {
-            s.iter()
-                .enumerate()
-                .filter(|&(t, _)| (i >> t) % 2 == 1)
-                .map(|(_, element)| element)
-                .collect()
-        })
-        .collect()
-}
 
 fn compute_rank(mut mat: Vec<Vec<bool>>) -> usize {
     let n = mat.len();
@@ -56,7 +43,7 @@ fn compute_rank(mut mat: Vec<Vec<bool>>) -> usize {
     rank
 }
 
-const REPETITIONS: usize = 1048576; // 2097152
+const REPETITIONS: usize = 2097152; // 1048576;
 const PROBABILITIES: [f64; 3] = [0.133636, 0.577576, 0.288788];
 
 fn x2_test(ranks: [usize; 3]) -> f64 {
@@ -83,7 +70,7 @@ fn linear_span_test() {
 
     let zeroes = [0u8; 16];
     // each will have only one '1', so they are linearly independent
-    let base_bits = Bits::new(zeroes).collect::<Vec<[u8; INPUT_SIZE_BYTES]>>();
+    let base_bits = BitsOne::new(zeroes).collect::<Vec<[u8; INPUT_SIZE_BYTES]>>();
     // let mut inputs = base_bits
     //     .permutations(128)
     //     .step_by(128)
@@ -102,7 +89,6 @@ fn linear_span_test() {
             .collect();
         let bits = &bits[0..7];
         let inputs: Vec<[u8; INPUT_SIZE_BYTES]> = powerset(bits)
-            .iter()
             .par_bridge()
             .map(|chunk| chunk.iter().fold(zeroes, |acc, &&x| xor_array(acc, x)))
             .collect();
@@ -136,7 +122,7 @@ fn linear_span_test() {
             _ => bins[2] += 1,
         }
     }
-    fs::write("linspan_ranks.txt", format!("{:?}", bins)).expect("Error saving SAC matrix");
+    fs::write("linspan_ranks.txt", format!("{:?}", bins)).expect("Error saving linspan results");
     let val = x2_test(bins);
     println!("{}", val);
     assert!(val < 9.210)

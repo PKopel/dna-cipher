@@ -3,18 +3,19 @@
 use dnac::dna::{DNA, *};
 
 pub const INPUT_SIZE_BYTES: usize = 16;
-pub struct Bits {
+pub struct BitsOne {
     bits: [u8; INPUT_SIZE_BYTES],
     n_bit: usize,
 }
 
-impl Bits {
+impl BitsOne {
+    #[allow(dead_code)]
     pub fn new(bits: [u8; INPUT_SIZE_BYTES]) -> Self {
-        Bits { bits, n_bit: 0 }
+        BitsOne { bits, n_bit: 0 }
     }
 }
 
-impl Iterator for Bits {
+impl Iterator for BitsOne {
     type Item = [u8; INPUT_SIZE_BYTES];
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -27,6 +28,47 @@ impl Iterator for Bits {
 
             self.n_bit += 1;
 
+            Some(new_bits)
+        } else {
+            None
+        }
+    }
+}
+
+pub struct BitsAll {
+    bits: [u8; INPUT_SIZE_BYTES],
+    bits_iter: Vec<Vec<usize>>,
+    n_bit: usize,
+    n_change: u32,
+}
+
+impl BitsAll {
+    #[allow(dead_code)]
+    pub fn new(bits: [u8; INPUT_SIZE_BYTES], n_change: u32) -> Self {
+        let bits_iter = powerset(&Vec::from_iter(0..(n_change as usize)))
+            .map(|v| v.iter().map(|&&a| a).collect::<Vec<usize>>())
+            .collect();
+        BitsAll {
+            bits,
+            bits_iter,
+            n_bit: 0,
+            n_change,
+        }
+    }
+}
+
+impl Iterator for BitsAll {
+    type Item = [u8; INPUT_SIZE_BYTES];
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.n_bit < 2usize.pow(self.n_change) {
+            let idxs = &self.bits_iter[self.n_bit];
+            let mut new_bits = self.bits.clone();
+            for idx in idxs {
+                let i = idx / 8;
+                let j = idx % 8;
+                new_bits[i] ^= 0b1000_0000 >> j;
+            }
             Some(new_bits)
         } else {
             None
@@ -72,4 +114,15 @@ pub fn check_ones(a: &u8) -> [u32; 8] {
         mask >>= 1;
     }
     result
+}
+
+#[allow(dead_code)]
+pub fn powerset<T>(s: &[T]) -> impl Iterator<Item = Vec<&T>> {
+    (0..2usize.pow(s.len() as u32)).map(|i| {
+        s.iter()
+            .enumerate()
+            .filter(|&(t, _)| (i >> t) % 2 == 1)
+            .map(|(_, element)| element)
+            .collect()
+    })
 }
