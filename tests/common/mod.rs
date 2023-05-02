@@ -69,6 +69,8 @@ impl Iterator for BitsAll {
                 let j = idx % 8;
                 new_bits[i] ^= 0b1000_0000 >> j;
             }
+
+            self.n_bit += 1;
             Some(new_bits)
         } else {
             None
