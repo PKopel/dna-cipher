@@ -63,5 +63,5 @@ fn sac_test() {
     // println!("{:?}", sac_matrix);
     fs::write("sac_matrix.txt", format!("{:?}", sac_matrix)).expect("Error saving SAC matrix");
     let val = x2_test(sac_matrix);
-    assert!(val < 11.345) // based on lookup table value for 4 degrees
+    assert!(val < 13.277) // based on lookup table value for 4 degrees
 }
