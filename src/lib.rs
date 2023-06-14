@@ -30,10 +30,8 @@ pub struct DNAC {
 impl DNAC {
     pub fn new(key: Vec<DNA>) -> DNAC {
         let sbox = SBox::new();
-        DNAC {
-            sbox: sbox,
-            key: DNAC::expand_key(key, sbox),
-        }
+        let key = DNAC::expand_key(key, sbox);
+        DNAC { sbox, key }
     }
 
     fn expand_key(key: Vec<DNA>, sbox: SBox) -> Vec<[DNA; KEY_SIZE]> {
