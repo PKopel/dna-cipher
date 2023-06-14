@@ -1,4 +1,5 @@
-use std::{collections::HashSet, fs};
+use std::collections::HashSet;
+// use std::fs;
 
 // use aes::{
 //     cipher::{generic_array::GenericArray, BlockEncrypt, KeyInit},
@@ -16,15 +17,15 @@ mod common;
 
 const N: u32 = 12;
 const T: usize = 2; // 16 bits = 2 u8
+const SIZE: usize = 2_usize.pow(20); // 4096 * 128; // 4294967296u64;
 const PROBABILITIES: [f64; 5] = [0.206246, 0.194005, 0.219834, 0.183968, 0.195947];
 
 fn x2_test(bins: [u32; 5]) -> f64 {
     let mut e = 0.0;
-    let size = 2_u32.pow(20); // 4096 * 128; // 4294967296u64;
     bins.iter()
         .enumerate()
         .map(|(i, l)| {
-            e = PROBABILITIES[i] * (size as f64);
+            e = PROBABILITIES[i] * (SIZE as f64);
             ((*l as f64) - e).powf(2.0) / e
         })
         .sum()
@@ -37,7 +38,7 @@ fn collision_test() {
     // let cipher = Aes128::new(&key);
     let bins: [u32; 5] = data
         .chunks_exact(16)
-        .take(2_usize.pow(20))
+        .take(SIZE)
         .tqdm()
         .par_bridge()
         .map(|input| {
