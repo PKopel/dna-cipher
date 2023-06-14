@@ -5,7 +5,7 @@ use rand::{seq::SliceRandom, thread_rng};
 use rayon::prelude::{ParallelBridge, ParallelIterator};
 
 mod common;
-use common::{encrypt, powerset, xor_array, BitsOne, INPUT_SIZE_BYTES};
+use common::{powerset, xor_array, BitsOne, INPUT_SIZE_BYTES};
 use kdam::tqdm;
 
 // use aes::cipher::{generic_array::GenericArray, BlockEncrypt, KeyInit};
@@ -62,6 +62,7 @@ fn x2_test(ranks: [usize; 3]) -> f64 {
 
 #[test]
 fn linear_span_test() {
+    let test = common::Test::new();
     // let key = GenericArray::from([0u8; 16]);
     // let cipher = Aes128::new(&key);
 
@@ -99,7 +100,7 @@ fn linear_span_test() {
                 // let mut block = GenericArray::from(x);
                 // cipher.encrypt_block(&mut block);
                 // block
-                encrypt(x)
+                test.encrypt(x)
                     .iter()
                     .flat_map(|byte| {
                         let mut bits = [false; 8];

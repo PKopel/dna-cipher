@@ -78,21 +78,32 @@ impl Iterator for BitsAll {
     }
 }
 
-#[allow(dead_code)]
-pub fn encrypt(bits: [u8; INPUT_SIZE_BYTES]) -> [u8; INPUT_SIZE_BYTES] {
-    let key = include_bytes!("data/key_32B.blb")
-        .iter()
-        .flat_map(binary_to_DNA)
-        .collect();
-    let result = bits.iter().flat_map(binary_to_DNA).collect::<Vec<DNA>>();
-    let cipher = dnac::DNAC::new(key);
-    cipher
-        .encrypt(result)
-        .chunks_exact(4)
-        .map(|chunk| DNA_to_binary(chunk.try_into().unwrap()))
-        .collect::<Vec<u8>>()
-        .try_into()
-        .unwrap()
+pub struct Test {
+    cipher: dnac::DNAC,
+}
+
+impl Test {
+    #[allow(dead_code)]
+    pub fn new() -> Self {
+        let key = include_bytes!("data/key_32B.blb")
+            .iter()
+            .flat_map(binary_to_DNA)
+            .collect();
+        let cipher = dnac::DNAC::new(key);
+        Test { cipher }
+    }
+
+    #[allow(dead_code)]
+    pub fn encrypt(&self, bits: [u8; INPUT_SIZE_BYTES]) -> [u8; INPUT_SIZE_BYTES] {
+        let result = bits.iter().flat_map(binary_to_DNA).collect::<Vec<DNA>>();
+        self.cipher
+            .encrypt(result)
+            .chunks_exact(4)
+            .map(|chunk| DNA_to_binary(chunk.try_into().unwrap()))
+            .collect::<Vec<u8>>()
+            .try_into()
+            .unwrap()
+    }
 }
 
 #[allow(dead_code)]

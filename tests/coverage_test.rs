@@ -11,7 +11,7 @@ use rayon::{
     prelude::{ParallelBridge, ParallelIterator},
 };
 
-use crate::common::{encrypt, BitsAll};
+use crate::common::BitsAll;
 
 mod common;
 
@@ -33,6 +33,7 @@ fn x2_test(bins: [u32; 5]) -> f64 {
 
 #[test]
 fn collision_test() {
+    // let test = common::Test::new();
     let data = include_bytes!("common/data/texts_16MB.blb");
     let key = GenericArray::from([0u8; 16]);
     let cipher = Aes128::new(&key);
@@ -49,7 +50,7 @@ fn collision_test() {
             let bits = BitsAll::new(input_bits, N);
 
             for bits in bits {
-                // let encrypted = encrypt(bits);
+                // let encrypted = test.encrypt(bits);
                 // let output: [u8; 2] = encrypted[..T].try_into().unwrap();
                 let mut block = GenericArray::from(bits);
                 cipher.encrypt_block(&mut block);

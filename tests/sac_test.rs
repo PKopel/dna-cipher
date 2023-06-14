@@ -1,6 +1,6 @@
 use std::fs;
 
-use common::{check_ones, encrypt, xor_array};
+use common::{check_ones, xor_array};
 use kdam::tqdm;
 use rayon::prelude::{ParallelBridge, ParallelIterator};
 
@@ -34,6 +34,7 @@ fn x2_test(matrix: [[u32; 128]; 128]) -> f64 {
 
 #[test]
 fn sac_test() {
+    let test = common::Test::new();
     let mut sac_matrix = [[0; 128]; 128];
     let data = include_bytes!("common/data/texts_16MB.blb");
     // let key = GenericArray::from([0u8; 16]);
@@ -43,13 +44,13 @@ fn sac_test() {
         let bits = common::BitsOne::new(input_bits);
         // let mut fst_block = GenericArray::from(input_bits);
         // cipher.encrypt_block(&mut fst_block);
-        let fst_output = encrypt(input.try_into().unwrap());
+        let fst_output = test.encrypt(input.try_into().unwrap());
         bits.zip(&mut sac_matrix)
             .par_bridge()
             .for_each(|(bits, results)| {
                 // let mut block = GenericArray::from(bits);
                 // cipher.encrypt_block(&mut block);
-                let output = encrypt(bits);
+                let output = test.encrypt(bits);
                 // let xored = xor_array(
                 //     fst_block.as_slice().try_into().unwrap(),
                 //     block.as_slice().try_into().unwrap(),
