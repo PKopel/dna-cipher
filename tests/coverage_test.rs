@@ -1,10 +1,10 @@
 use std::collections::HashSet;
 use std::fs;
 
-use aes::{
-    cipher::{generic_array::GenericArray, BlockEncrypt, KeyInit},
-    Aes128,
-};
+// use aes::{
+//     cipher::{generic_array::GenericArray, BlockEncrypt, KeyInit},
+//     Aes128,
+// };
 use kdam::TqdmIterator;
 use rayon::{
     self,
@@ -33,10 +33,10 @@ fn x2_test(bins: [u32; 5]) -> f64 {
 
 #[test]
 fn collision_test() {
-    // let test = common::Test::new();
+    let test = common::Test::new();
     let data = include_bytes!("common/data/texts_16MB.blb");
-    let key = GenericArray::from([0u8; 16]);
-    let cipher = Aes128::new(&key);
+    // let key = GenericArray::from([0u8; 16]);
+    // let cipher = Aes128::new(&key);
     let bins: [u32; 5] = data
         .chunks_exact(16)
         .take(SIZE)
@@ -50,11 +50,11 @@ fn collision_test() {
             let bits = BitsAll::new(input_bits, N);
 
             for bits in bits {
-                // let encrypted = test.encrypt(bits);
-                // let output: [u8; 2] = encrypted[..T].try_into().unwrap();
-                let mut block = GenericArray::from(bits);
-                cipher.encrypt_block(&mut block);
-                let mut output: [u8; T] = block.as_slice()[..T].try_into().unwrap();
+                let encrypted = test.encrypt(bits);
+                let mut output: [u8; 2] = encrypted[..T].try_into().unwrap();
+                // let mut block = GenericArray::from(bits);
+                // cipher.encrypt_block(&mut block);
+                // let mut output: [u8; T] = block.as_slice()[..T].try_into().unwrap();
                 output[0] &= 0b0000_1111; // clear first 4 bits to compare only 12
                 if !outputs.contains(&output) {
                     coverage += 1;

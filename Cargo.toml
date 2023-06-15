@@ -28,6 +28,10 @@ path = "src/lib.rs"
 name = "dnac"
 path = "src/bin/dnac.rs"
 
+[[bin]]
+name = "nist"
+path = "src/bin/nist.rs"
+
 # [[bin]]
 # name = "bench"
 # path = "benches/dnac_vs_aes.rs"
