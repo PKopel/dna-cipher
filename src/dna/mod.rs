@@ -29,27 +29,7 @@ impl BitXor for DNA {
     type Output = Self;
 
     fn bitxor(self, rhs: Self) -> Self::Output {
-        match self {
-            Self::A => rhs,
-            Self::C => match rhs {
-                DNA::A => DNA::C,
-                DNA::C => DNA::A,
-                DNA::G => DNA::T,
-                DNA::T => DNA::G,
-            },
-            Self::G => match rhs {
-                DNA::A => DNA::G,
-                DNA::C => DNA::T,
-                DNA::G => DNA::A,
-                DNA::T => DNA::C,
-            },
-            Self::T => match rhs {
-                DNA::A => DNA::T,
-                DNA::C => DNA::G,
-                DNA::G => DNA::C,
-                DNA::T => DNA::A,
-            },
-        }
+        xors::dnaxor_1(self, rhs)
     }
 }
 
