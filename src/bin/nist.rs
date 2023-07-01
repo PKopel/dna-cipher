@@ -1,5 +1,8 @@
 use clap::{Parser, Subcommand};
-use dnac::dna::{self, DNA};
+use dnac::{
+    dna::{self, DNA},
+    DNAC,
+};
 use kdam::tqdm;
 use std::{
     collections::HashMap,
@@ -9,8 +12,9 @@ use std::{
 };
 
 const INPUT_SIZE_BYTES: usize = 16;
+const INPUT_SIZE_DNA: usize = 64;
 const RAND_FILE: &str = "/dev/urandom";
-const ZERO_FILE: &str = "/dev/zero";
+// const ZERO_FILE: &str = "/dev/zero";
 
 #[derive(Parser, Debug, Clone)]
 #[command(author, version, about, long_about = None)]
@@ -82,19 +86,19 @@ impl Iterator for BitsOne {
     }
 }
 
-fn read_block<T: Read>(mut reader: T) -> io::Result<Vec<DNA>> {
-    let mut buffer = vec![0; INPUT_SIZE_BYTES];
+// fn read_block<T: Read>(mut reader: T) -> io::Result<Vec<DNA>> {
+//     let mut buffer = vec![0; INPUT_SIZE_BYTES];
 
-    // Read file into vector.
-    reader.read_exact(&mut buffer)?;
-    let result = buffer
-        .iter()
-        .flat_map(dna::binary_to_DNA)
-        .collect::<Vec<DNA>>();
-    Ok(result)
-}
+//     // Read file into vector.
+//     reader.read_exact(&mut buffer)?;
+//     let result = buffer
+//         .iter()
+//         .flat_map(dna::binary_to_DNA)
+//         .collect::<Vec<DNA>>();
+//     Ok(result)
+// }
 
-fn write_block<T: Write>(mut writer: T, dna: Vec<DNA>) -> io::Result<usize> {
+fn write_block<T: Write>(mut writer: T, dna: &Vec<DNA>) -> io::Result<usize> {
     let buffer = dna
         .chunks_exact(4)
         .map(|chunk| dna::DNA_to_binary(chunk.try_into().unwrap()))
@@ -103,25 +107,25 @@ fn write_block<T: Write>(mut writer: T, dna: Vec<DNA>) -> io::Result<usize> {
 }
 
 fn u8_to_dna(input: [u8; INPUT_SIZE_BYTES]) -> Vec<DNA> {
-    input.iter().flat_map(dnac::dna::binary_to_DNA).collect()
+    input.iter().flat_map(dna::binary_to_DNA).collect()
 }
 
 fn key_avalanche(output: File) -> io::Result<()> {
     let mut keys = BufReader::new(File::open(RAND_FILE)?);
     let mut buffer = [0; INPUT_SIZE_BYTES];
-    let input_zeros = vec![DNA::A; 64];
+    let input_zeros = vec![DNA::A; INPUT_SIZE_DNA];
 
     for _ in tqdm!(0..384) {
         if let Ok(_) = keys.read_exact(&mut buffer) {
             let key_0 = u8_to_dna(buffer);
-            let cipher_0 = dnac::DNAC::new(key_0);
+            let cipher_0 = DNAC::new(key_0);
             let block_0 = cipher_0.encrypt(input_zeros.clone());
             for key in BitsOne::new(buffer) {
                 let key = u8_to_dna(key);
-                let cipher = dnac::DNAC::new(key);
+                let cipher = DNAC::new(key);
                 let block = cipher.encrypt(input_zeros.clone());
                 let result: Vec<DNA> = block_0.iter().zip(block).map(|(&a, b)| a ^ b).collect();
-                write_block(output.try_clone()?, result)?;
+                write_block(output.try_clone()?, &result)?;
             }
         }
     }
@@ -131,7 +135,7 @@ fn key_avalanche(output: File) -> io::Result<()> {
 fn plaintext_avalanche(output: File) -> io::Result<()> {
     let mut texts = BufReader::new(File::open(RAND_FILE)?);
     let mut buffer = [0; INPUT_SIZE_BYTES];
-    let cipher = dnac::DNAC::new(vec![DNA::A; 64]);
+    let cipher = DNAC::new(vec![DNA::A; INPUT_SIZE_DNA]);
 
     for _ in tqdm!(0..384) {
         if let Ok(_) = texts.read_exact(&mut buffer) {
@@ -140,8 +144,8 @@ fn plaintext_avalanche(output: File) -> io::Result<()> {
             for text in BitsOne::new(buffer) {
                 let text = u8_to_dna(text);
                 let block = cipher.encrypt(text);
-                let result: Vec<DNA> = block_0.iter().zip(block).map(|(&a, b)| a ^ b).collect();
-                write_block(output.try_clone()?, result)?;
+                let result = block_0.iter().zip(block).map(|(&a, b)| a ^ b).collect();
+                write_block(output.try_clone()?, &result)?;
             }
         }
     }
@@ -149,14 +153,63 @@ fn plaintext_avalanche(output: File) -> io::Result<()> {
 }
 
 fn correlation(output: File) -> io::Result<()> {
+    const INPUT_BLOCKS_SIZE: usize = 130048; // 16 (one block in bytes) * 8128
+    let mut inputs = BufReader::new(File::open(RAND_FILE)?);
+    let mut texts = [0; INPUT_BLOCKS_SIZE];
+    inputs.read_exact(&mut texts)?;
+
+    for _ in tqdm!(0..128) {
+        let mut key = [0; INPUT_SIZE_BYTES];
+        inputs.read_exact(&mut key)?;
+        let key = u8_to_dna(key);
+        let cipher = DNAC::new(key);
+        for text in texts.chunks_exact(INPUT_SIZE_BYTES) {
+            let text = u8_to_dna(text.try_into().unwrap());
+            let block = cipher.encrypt(text.clone());
+            let result = text.iter().zip(block).map(|(&a, b)| a ^ b).collect();
+            write_block(output.try_clone()?, &result)?;
+        }
+    }
     Ok(())
 }
 
 fn block_chaining(output: File) -> io::Result<()> {
+    let mut inputs = BufReader::new(File::open(RAND_FILE)?);
+    let text = vec![DNA::A; INPUT_SIZE_DNA];
+
+    for _ in tqdm!(0..300) {
+        let mut iv = [0; INPUT_SIZE_BYTES];
+        let mut key = [0; INPUT_SIZE_BYTES];
+        inputs.read_exact(&mut iv)?;
+        inputs.read_exact(&mut key)?;
+        let mut iv = u8_to_dna(iv);
+        let key = u8_to_dna(key);
+        let cipher = DNAC::new(key);
+        for _ in 0..8192 {
+            let input: Vec<DNA> = text.iter().zip(iv.clone()).map(|(&a, b)| a ^ b).collect();
+            iv = cipher.encrypt(input.clone());
+            write_block(output.try_clone()?, &iv)?;
+        }
+    }
     Ok(())
 }
 
 fn random(output: File) -> io::Result<()> {
+    let mut inputs = BufReader::new(File::open(RAND_FILE)?);
+
+    for _ in tqdm!(0..128) {
+        let mut key = [0; INPUT_SIZE_BYTES];
+        inputs.read_exact(&mut key)?;
+        let key = u8_to_dna(key);
+        let cipher = DNAC::new(key);
+        for _ in 0..8128 {
+            let mut text = [0; INPUT_SIZE_BYTES];
+            inputs.read_exact(&mut text)?;
+            let text = u8_to_dna(text.try_into().unwrap());
+            let block = cipher.encrypt(text.clone());
+            write_block(output.try_clone()?, &block)?;
+        }
+    }
     Ok(())
 }
 

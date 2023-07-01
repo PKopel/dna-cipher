@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use log::trace;
 
 pub mod dna;
@@ -24,7 +26,7 @@ const INTRON_SIZE: usize = 8;
 
 pub struct DNAC {
     sbox: SBox,
-    key: Vec<[DNA; KEY_SIZE]>,
+    key: Arc<[[DNA; KEY_SIZE]]>,
 }
 
 impl DNAC {
@@ -34,7 +36,7 @@ impl DNAC {
         DNAC { sbox, key }
     }
 
-    fn expand_key(key: Vec<DNA>, sbox: SBox) -> Vec<[DNA; KEY_SIZE]> {
+    fn expand_key(key: Vec<DNA>, sbox: SBox) -> Arc<[[DNA; KEY_SIZE]]> {
         let original = key
             .chunks_exact(4)
             .map(|chunk| chunk.try_into().unwrap())
@@ -155,7 +157,7 @@ impl DNAC {
                             .copy_from_slice(&result[0..SOURCE_SIZE]);
                     } else {
                         // for last round we need to keep the order to be able to decrypt the message
-                        input_chunk.copy_from_slice(&result);
+                        input_chunk = result;
                     }
                 }
                 input_chunk.to_vec()
@@ -191,7 +193,7 @@ impl DNAC {
                             .copy_from_slice(&result[0..TARGET_SIZE]);
                     } else {
                         // for last round we need to keep the order to be able to decrypt the message
-                        input_chunk.copy_from_slice(&result);
+                        input_chunk = result;
                     }
                 }
                 input_chunk.to_vec()
