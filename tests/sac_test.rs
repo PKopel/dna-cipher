@@ -1,3 +1,4 @@
+use dnac::bits::BitsOne;
 use std::fs;
 
 use common::{check_ones, xor_array};
@@ -41,7 +42,7 @@ fn sac_test() {
     // let cipher = Aes128::new(&key);
     for input in tqdm!(data.chunks_exact(16)) {
         let input_bits = input.try_into().unwrap();
-        let bits = common::BitsOne::new(input_bits);
+        let bits = BitsOne::new(input_bits);
         // let mut fst_block = GenericArray::from(input_bits);
         // cipher.encrypt_block(&mut fst_block);
         let fst_output = test.encrypt(input.try_into().unwrap());

@@ -11,7 +11,7 @@ use rayon::{
     prelude::{ParallelBridge, ParallelIterator},
 };
 
-use crate::common::BitsAll;
+use dnac::bits::BitsAll;
 
 mod common;
 

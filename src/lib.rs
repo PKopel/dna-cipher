@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use log::trace;
 
+pub mod bits;
 pub mod dna;
 use dna::{
     binary_to_DNA,

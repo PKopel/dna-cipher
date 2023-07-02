@@ -1,5 +1,6 @@
 use clap::{Parser, Subcommand};
 use dnac::{
+    bits::{BitsOne, BitsTwo},
     dna::{self, DNA},
     DNAC,
 };
@@ -53,50 +54,6 @@ impl Display for Commands {
         }
     }
 }
-
-pub struct BitsOne {
-    bits: [u8; INPUT_SIZE_BYTES],
-    n_bit: usize,
-}
-
-impl BitsOne {
-    #[allow(dead_code)]
-    pub fn new(bits: [u8; INPUT_SIZE_BYTES]) -> Self {
-        BitsOne { bits, n_bit: 0 }
-    }
-}
-
-impl Iterator for BitsOne {
-    type Item = [u8; INPUT_SIZE_BYTES];
-
-    fn next(&mut self) -> Option<Self::Item> {
-        if self.n_bit < INPUT_SIZE_BYTES * 8 {
-            let u8_idx = self.n_bit / 8;
-            let mask = 0b10000000 >> (self.n_bit % 8);
-
-            let mut new_bits = self.bits;
-            new_bits[u8_idx] ^= mask;
-
-            self.n_bit += 1;
-
-            Some(new_bits)
-        } else {
-            None
-        }
-    }
-}
-
-// fn read_block<T: Read>(mut reader: T) -> io::Result<Vec<DNA>> {
-//     let mut buffer = vec![0; INPUT_SIZE_BYTES];
-
-//     // Read file into vector.
-//     reader.read_exact(&mut buffer)?;
-//     let result = buffer
-//         .iter()
-//         .flat_map(dna::binary_to_DNA)
-//         .collect::<Vec<DNA>>();
-//     Ok(result)
-// }
 
 fn write_block<T: Write>(mut writer: T, dna: &Vec<DNA>) -> io::Result<usize> {
     let buffer = dna
@@ -205,7 +162,7 @@ fn random(output: File) -> io::Result<()> {
         for _ in 0..8128 {
             let mut text = [0; INPUT_SIZE_BYTES];
             inputs.read_exact(&mut text)?;
-            let text = u8_to_dna(text.try_into().unwrap());
+            let text = u8_to_dna(text);
             let block = cipher.encrypt(text.clone());
             write_block(output.try_clone()?, &block)?;
         }
@@ -214,18 +171,98 @@ fn random(output: File) -> io::Result<()> {
 }
 
 fn key_low_density(output: File) -> io::Result<()> {
+    let mut inputs = BufReader::new(File::open(RAND_FILE)?);
+
+    for _ in tqdm!(0..128) {
+        let keys = [[0; INPUT_SIZE_BYTES]]
+            .iter()
+            .map(|v| v.to_owned())
+            .chain(BitsOne::new([0; INPUT_SIZE_BYTES]))
+            .chain(BitsTwo::new([0; INPUT_SIZE_BYTES]));
+
+        for key in keys {
+            let key = u8_to_dna(key);
+            let cipher = DNAC::new(key);
+
+            let mut text = [0; INPUT_SIZE_BYTES];
+            inputs.read_exact(&mut text)?;
+            let text = u8_to_dna(text);
+            let block = cipher.encrypt(text.clone());
+            write_block(output.try_clone()?, &block)?;
+        }
+    }
     Ok(())
 }
 
 fn plaintext_low_density(output: File) -> io::Result<()> {
+    let mut inputs = BufReader::new(File::open(RAND_FILE)?);
+
+    for _ in tqdm!(0..128) {
+        let mut key = [0; INPUT_SIZE_BYTES];
+        inputs.read_exact(&mut key)?;
+        let key = u8_to_dna(key);
+        let cipher = DNAC::new(key);
+
+        let texts = [[0; INPUT_SIZE_BYTES]]
+            .iter()
+            .map(|v| v.to_owned())
+            .chain(BitsOne::new([0; INPUT_SIZE_BYTES]))
+            .chain(BitsTwo::new([0; INPUT_SIZE_BYTES]));
+
+        for text in texts {
+            let text = u8_to_dna(text);
+            let block = cipher.encrypt(text.clone());
+            write_block(output.try_clone()?, &block)?;
+        }
+    }
     Ok(())
 }
 
 fn key_high_density(output: File) -> io::Result<()> {
+    let mut inputs = BufReader::new(File::open(RAND_FILE)?);
+
+    for _ in tqdm!(0..128) {
+        let keys = [[0b1111_1111; INPUT_SIZE_BYTES]]
+            .iter()
+            .map(|v| v.to_owned())
+            .chain(BitsOne::new([0b1111_1111; INPUT_SIZE_BYTES]))
+            .chain(BitsTwo::new([0b1111_1111; INPUT_SIZE_BYTES]));
+
+        for key in keys {
+            let key = u8_to_dna(key);
+            let cipher = DNAC::new(key);
+
+            let mut text = [0; INPUT_SIZE_BYTES];
+            inputs.read_exact(&mut text)?;
+            let text = u8_to_dna(text.try_into().unwrap());
+            let block = cipher.encrypt(text.clone());
+            write_block(output.try_clone()?, &block)?;
+        }
+    }
     Ok(())
 }
 
 fn plaintext_high_density(output: File) -> io::Result<()> {
+    let mut inputs = BufReader::new(File::open(RAND_FILE)?);
+
+    for _ in tqdm!(0..128) {
+        let mut key = [0; INPUT_SIZE_BYTES];
+        inputs.read_exact(&mut key)?;
+        let key = u8_to_dna(key);
+        let cipher = DNAC::new(key);
+
+        let texts = [[0b1111_1111; INPUT_SIZE_BYTES]]
+            .iter()
+            .map(|v| v.to_owned())
+            .chain(BitsOne::new([0b1111_1111; INPUT_SIZE_BYTES]))
+            .chain(BitsTwo::new([0b1111_1111; INPUT_SIZE_BYTES]));
+
+        for text in texts {
+            let text = u8_to_dna(text);
+            let block = cipher.encrypt(text.clone());
+            write_block(output.try_clone()?, &block)?;
+        }
+    }
     Ok(())
 }
 

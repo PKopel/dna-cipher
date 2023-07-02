@@ -5,7 +5,8 @@ use rand::{seq::SliceRandom, thread_rng};
 use rayon::prelude::{ParallelBridge, ParallelIterator};
 
 mod common;
-use common::{powerset, xor_array, BitsOne, INPUT_SIZE_BYTES};
+use common::xor_array;
+use dnac::bits::{powerset, BitsOne, INPUT_SIZE_BYTES};
 use kdam::tqdm;
 
 // use aes::cipher::{generic_array::GenericArray, BlockEncrypt, KeyInit};
