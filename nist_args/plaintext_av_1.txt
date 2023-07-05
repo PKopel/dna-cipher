@@ -1,0 +1,6 @@
+0
+dnac/plaintext_av.blb
+1
+0
+384
+1

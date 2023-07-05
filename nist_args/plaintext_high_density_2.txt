@@ -1,0 +1,6 @@
+0
+dnac/plaintext_high_density.blb
+1
+0
+128
+1

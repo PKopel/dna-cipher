@@ -4,3 +4,4 @@
 *.enc
 *.blb
 ignore
+!nist_args/*.txt
