@@ -92,15 +92,15 @@ impl Iterator for BitsTwo {
     type Item = [u8; INPUT_SIZE_BYTES];
 
     fn next(&mut self) -> Option<Self::Item> {
-        // first bit reached the end - finish sequence
-        if self.fst_bit >= INPUT_SIZE_BYTES * 8 {
-            return None;
-        }
         // second bit reached the end - move first one up
         // eg. 01000001 -> 00110000
         if self.snd_bit >= INPUT_SIZE_BYTES * 8 {
             self.fst_bit += 1;
             self.snd_bit = self.fst_bit + 1;
+        }
+        // first bit reached the end - finish sequence
+        if self.fst_bit >= (INPUT_SIZE_BYTES * 8) - 1 {
+            return None;
         }
         let fst_u8_idx = self.fst_bit / 8;
         let fst_mask = 0b10000000 >> (self.fst_bit % 8);

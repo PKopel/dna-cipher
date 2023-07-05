@@ -72,7 +72,7 @@ fn key_avalanche(output: File) -> io::Result<()> {
     let mut buffer = [0; INPUT_SIZE_BYTES];
     let input_zeros = vec![DNA::A; INPUT_SIZE_DNA];
 
-    for _ in tqdm!(0..384) {
+    for _ in tqdm!(0..24576) {
         if let Ok(_) = keys.read_exact(&mut buffer) {
             let key_0 = u8_to_dna(buffer);
             let cipher_0 = DNAC::new(key_0);
@@ -94,7 +94,7 @@ fn plaintext_avalanche(output: File) -> io::Result<()> {
     let mut buffer = [0; INPUT_SIZE_BYTES];
     let cipher = DNAC::new(vec![DNA::A; INPUT_SIZE_DNA]);
 
-    for _ in tqdm!(0..384) {
+    for _ in tqdm!(0..24576) {
         if let Ok(_) = texts.read_exact(&mut buffer) {
             let text_0 = u8_to_dna(buffer);
             let block_0 = cipher.encrypt(text_0);
