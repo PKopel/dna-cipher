@@ -24,7 +24,7 @@ impl Bench {
         let aes_key = GenericArray::from(*key);
 
         Bench {
-            dnac: DNAC::new(dnac_key),
+            dnac: DNAC::new_default(dnac_key),
             aes: Aes256::new(&aes_key),
         }
     }

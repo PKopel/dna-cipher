@@ -32,8 +32,8 @@ fn x2_test(bins: [u32; 5]) -> f64 {
 }
 
 #[test]
-fn collision_test() {
-    let test = common::Test::new();
+fn coverage_test() {
+    let test = common::Test::new_rounds(42);
     let data = include_bytes!("common/data/texts_16MB.blb");
     // let key = GenericArray::from([0u8; 16]);
     // let cipher = Aes128::new(&key);

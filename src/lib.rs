@@ -31,40 +31,46 @@ pub struct DNAC {
 }
 
 impl DNAC {
-    pub fn new(key: Vec<DNA>) -> DNAC {
+    pub fn new_default(key: Vec<DNA>) -> DNAC {
+        DNAC::new(key, 46) // nuber of rounds based on test results
+    }
+
+    pub fn new(key: Vec<DNA>, rounds: usize) -> DNAC {
         let sbox = SBox::new();
-        let key = DNAC::expand_key(key, sbox);
+        let key = DNAC::expand_key(key, sbox, rounds);
         DNAC { sbox, key }
     }
 
-    fn expand_key(key: Vec<DNA>, sbox: SBox) -> Arc<[[DNA; KEY_SIZE]]> {
+    fn expand_key(key: Vec<DNA>, sbox: SBox, rounds: usize) -> Arc<[[DNA; KEY_SIZE]]> {
         let original = key
             .chunks_exact(4)
             .map(|chunk| chunk.try_into().unwrap())
             .collect::<Vec<[DNA; 4]>>();
-        let n = original.len() / 4;
-        let r = 23; // based on empirical evidence
-        if n >= r {
+        let n = original.len() / 2; // number of 8-base chunks
+        if n >= rounds {
             return key
                 .chunks_exact(KEY_SIZE)
                 .map(|chunk| chunk.try_into().unwrap())
+                .take(rounds)
                 .collect();
         }
         let rcs = vec![0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36];
         let mut rcs = rcs.iter().map(binary_to_DNA).cycle();
 
-        let mut expanded = vec![[DNA::A; 4]; r * 4];
-        let mut expanded_len = n * 4;
+        let expanded_final_size = (rounds / 2 + 1) * 4; // expanded contains 4-base chunks, rounds use 8-base chunks
+        let mut expanded = vec![[DNA::A; 4]; expanded_final_size];
+        let mut expanded_len = original.len();
         expanded[0..expanded_len].copy_from_slice(&original[..]);
 
-        while expanded_len < r * 4 {
-            match expanded_len % n {
+        let input_key_words = n / 2; // number of 16-base words in the original key
+        while expanded_len < expanded_final_size {
+            match expanded_len % input_key_words {
                 0 => {
                     let rci = rcs.next().unwrap();
                     for i in 0..4 {
                         expanded[expanded_len + i] = word_xor(
                             word_xor(
-                                expanded[expanded_len - n * 4 + i],
+                                expanded[expanded_len - n * 2 + i],
                                 sbox[&expanded[expanded_len - 4 + i]],
                             ),
                             rci,
@@ -76,7 +82,7 @@ impl DNAC {
                     for i in 0..4 {
                         expanded[expanded_len + i] = word_xor(
                             expanded[expanded_len - 4 + i],
-                            expanded[expanded_len - n * 4 + i],
+                            expanded[expanded_len - n * 2 + i],
                         )
                     }
                 }
@@ -90,6 +96,7 @@ impl DNAC {
             .collect::<Vec<DNA>>()
             .chunks_exact(KEY_SIZE)
             .map(|chunk| chunk.try_into().unwrap())
+            .take(rounds)
             .collect()
     }
 
@@ -220,7 +227,7 @@ mod test {
             .iter()
             .flat_map(binary_to_DNA)
             .collect::<Vec<DNA>>();
-        let cipher = DNAC::new(key);
+        let cipher = DNAC::new_default(key);
         assert_eq!(msg, cipher.decrypt(cipher.encrypt(msg.clone())).unwrap());
     }
 }

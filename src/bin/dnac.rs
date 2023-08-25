@@ -71,7 +71,7 @@ fn main() -> io::Result<()> {
     debug!("key = {:?}", key);
     debug!("msg = {:?}", dna);
 
-    let cipher = DNAC::new(key);
+    let cipher = DNAC::new_default(key);
 
     let result = if args.command == Commands::Encrypt {
         Ok(cipher.encrypt(dna))

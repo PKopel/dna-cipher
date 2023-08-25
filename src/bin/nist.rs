@@ -75,11 +75,11 @@ fn key_avalanche(output: File) -> io::Result<()> {
     for _ in tqdm!(0..24576) {
         if let Ok(_) = keys.read_exact(&mut buffer) {
             let key_0 = u8_to_dna(buffer);
-            let cipher_0 = DNAC::new(key_0);
+            let cipher_0 = DNAC::new_default(key_0);
             let block_0 = cipher_0.encrypt(input_zeros.clone());
             for key in BitsOne::new(buffer) {
                 let key = u8_to_dna(key);
-                let cipher = DNAC::new(key);
+                let cipher = DNAC::new_default(key);
                 let block = cipher.encrypt(input_zeros.clone());
                 let result: Vec<DNA> = block_0.iter().zip(block).map(|(&a, b)| a ^ b).collect();
                 write_block(output.try_clone()?, &result)?;
@@ -92,7 +92,7 @@ fn key_avalanche(output: File) -> io::Result<()> {
 fn plaintext_avalanche(output: File) -> io::Result<()> {
     let mut texts = BufReader::new(File::open(RAND_FILE)?);
     let mut buffer = [0; INPUT_SIZE_BYTES];
-    let cipher = DNAC::new(vec![DNA::A; INPUT_SIZE_DNA]);
+    let cipher = DNAC::new_default(vec![DNA::A; INPUT_SIZE_DNA]);
 
     for _ in tqdm!(0..24576) {
         if let Ok(_) = texts.read_exact(&mut buffer) {
@@ -119,7 +119,7 @@ fn correlation(output: File) -> io::Result<()> {
         let mut key = [0; INPUT_SIZE_BYTES];
         inputs.read_exact(&mut key)?;
         let key = u8_to_dna(key);
-        let cipher = DNAC::new(key);
+        let cipher = DNAC::new_default(key);
         for text in texts.chunks_exact(INPUT_SIZE_BYTES) {
             let text = u8_to_dna(text.try_into().unwrap());
             let block = cipher.encrypt(text.clone());
@@ -141,7 +141,7 @@ fn block_chaining(output: File) -> io::Result<()> {
         inputs.read_exact(&mut key)?;
         let mut iv = u8_to_dna(iv);
         let key = u8_to_dna(key);
-        let cipher = DNAC::new(key);
+        let cipher = DNAC::new_default(key);
         for _ in 0..8192 {
             let input: Vec<DNA> = text.iter().zip(iv.clone()).map(|(&a, b)| a ^ b).collect();
             iv = cipher.encrypt(input.clone());
@@ -158,7 +158,7 @@ fn random(output: File) -> io::Result<()> {
         let mut key = [0; INPUT_SIZE_BYTES];
         inputs.read_exact(&mut key)?;
         let key = u8_to_dna(key);
-        let cipher = DNAC::new(key);
+        let cipher = DNAC::new_default(key);
         for _ in 0..8128 {
             let mut text = [0; INPUT_SIZE_BYTES];
             inputs.read_exact(&mut text)?;
@@ -182,7 +182,7 @@ fn key_low_density(output: File) -> io::Result<()> {
 
         for key in keys {
             let key = u8_to_dna(key);
-            let cipher = DNAC::new(key);
+            let cipher = DNAC::new_default(key);
 
             let mut text = [0; INPUT_SIZE_BYTES];
             inputs.read_exact(&mut text)?;
@@ -201,7 +201,7 @@ fn plaintext_low_density(output: File) -> io::Result<()> {
         let mut key = [0; INPUT_SIZE_BYTES];
         inputs.read_exact(&mut key)?;
         let key = u8_to_dna(key);
-        let cipher = DNAC::new(key);
+        let cipher = DNAC::new_default(key);
 
         let texts = [[0; INPUT_SIZE_BYTES]]
             .iter()
@@ -230,7 +230,7 @@ fn key_high_density(output: File) -> io::Result<()> {
 
         for key in keys {
             let key = u8_to_dna(key);
-            let cipher = DNAC::new(key);
+            let cipher = DNAC::new_default(key);
 
             let mut text = [0; INPUT_SIZE_BYTES];
             inputs.read_exact(&mut text)?;
@@ -249,7 +249,7 @@ fn plaintext_high_density(output: File) -> io::Result<()> {
         let mut key = [0; INPUT_SIZE_BYTES];
         inputs.read_exact(&mut key)?;
         let key = u8_to_dna(key);
-        let cipher = DNAC::new(key);
+        let cipher = DNAC::new_default(key);
 
         let texts = [[0b1111_1111; INPUT_SIZE_BYTES]]
             .iter()

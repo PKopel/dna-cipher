@@ -16,7 +16,17 @@ impl Test {
             .iter()
             .flat_map(binary_to_DNA)
             .collect();
-        let cipher = dnac::DNAC::new(key);
+        let cipher = dnac::DNAC::new_default(key);
+        Test { cipher }
+    }
+
+    #[allow(dead_code)]
+    pub fn new_rounds(rounds: usize) -> Self {
+        let key = include_bytes!("data/key_32B.blb")
+            .iter()
+            .flat_map(binary_to_DNA)
+            .collect();
+        let cipher = dnac::DNAC::new(key, rounds);
         Test { cipher }
     }
 
