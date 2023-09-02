@@ -64,16 +64,25 @@ impl DNAC {
 
         let input_key_words = n / 2; // number of 16-base words in the original key
         while expanded_len < expanded_final_size {
-            match expanded_len % input_key_words {
+            match (expanded_len / 4) % input_key_words {
                 0 => {
                     let rci = rcs.next().unwrap();
                     for i in 0..4 {
                         expanded[expanded_len + i] = word_xor(
                             word_xor(
                                 expanded[expanded_len - n * 2 + i],
-                                sbox[&expanded[expanded_len - 4 + i]],
+                                sbox[&expanded[expanded_len - 4 + (i + 1) % 4]],
                             ),
                             rci,
+                        )
+                    }
+                }
+
+                4 if n > 24 => {
+                    for i in 0..4 {
+                        expanded[expanded_len + i] = word_xor(
+                            expanded[expanded_len - n * 2 + i],
+                            sbox[&expanded[expanded_len - 4 + i]],
                         )
                     }
                 }
@@ -81,8 +90,8 @@ impl DNAC {
                 _ => {
                     for i in 0..4 {
                         expanded[expanded_len + i] = word_xor(
-                            expanded[expanded_len - 4 + i],
                             expanded[expanded_len - n * 2 + i],
+                            expanded[expanded_len - 4 + i],
                         )
                     }
                 }
