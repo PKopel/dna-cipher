@@ -36,7 +36,7 @@ fn x2_test(matrix: [[u32; 128]; 128]) -> f64 {
 #[test]
 fn sac_test() {
     let data = include_bytes!("common/data/texts_16MB.blb");
-    for rounds in (23..40).rev() {
+    for rounds in [22] {
         println!("testing {} rounds", rounds);
         let test = common::Test::new_rounds(rounds);
         let mut sac_matrix = [[0; 128]; 128];

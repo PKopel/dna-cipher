@@ -442,3 +442,27 @@ impl Index<&[DNA; 4]> for SBox {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use std::fs;
+    #[test]
+    fn test_print_sbox() {
+        static DNA: [DNA; 4] = [DNA::A, DNA::C, DNA::G, DNA::T];
+        let mut output: Vec<String> = Vec::new();
+        let sbox = SBox::new();
+        for base1 in DNA {
+            for base2 in DNA {
+                for base3 in DNA {
+                    for base4 in DNA {
+                        let input = [base1, base2, base3, base4];
+
+                        output.push(format!("{:?}: {:?}", input, sbox[&input]))
+                    }
+                }
+            }
+        }
+        fs::write("sbox.txt", output.join("\n")).expect("Error saving SAC matrix");
+    }
+}

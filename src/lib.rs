@@ -21,7 +21,7 @@ macro_rules! min {
 const TARGET_SIZE: usize = 20;
 const SOURCE_SIZE: usize = 44;
 const INPUT_SIZE: usize = 64;
-const KEY_SIZE: usize = 8;
+const KEY_SIZE: usize = 28;
 const INTRON_SIZE: usize = 8;
 // intron size of 6 with target size of 18 uses 3 out of 4 pairs in key
 
@@ -32,7 +32,7 @@ pub struct DNAC {
 
 impl DNAC {
     pub fn new_default(key: Vec<DNA>) -> DNAC {
-        DNAC::new(key, 46) // nuber of rounds based on test results
+        DNAC::new(key, 22) // nuber of rounds based on test results
     }
 
     pub fn new(key: Vec<DNA>, rounds: usize) -> DNAC {
@@ -46,7 +46,7 @@ impl DNAC {
             .chunks_exact(4)
             .map(|chunk| chunk.try_into().unwrap())
             .collect::<Vec<[DNA; 4]>>();
-        let n = original.len() / 2; // number of 8-base chunks
+        let n = original.len() / 7; // number of 28-base long chunks
         if n >= rounds {
             return key
                 .chunks_exact(KEY_SIZE)
@@ -57,7 +57,7 @@ impl DNAC {
         let rcs = vec![0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36];
         let mut rcs = rcs.iter().map(binary_to_DNA).cycle();
 
-        let expanded_final_size = (rounds / 2 + 1) * 4; // expanded contains 4-base chunks, rounds use 8-base chunks
+        let expanded_final_size = rounds * 8; // expanded contains 4-base chunks, rounds use 28-base chunks
         let mut expanded = vec![[DNA::A; 4]; expanded_final_size];
         let mut expanded_len = original.len();
         expanded[0..expanded_len].copy_from_slice(&original[..]);
@@ -113,15 +113,23 @@ impl DNAC {
         let mut result = [DNA::A; INPUT_SIZE];
         result.copy_from_slice(input.as_slice());
         let (source, target) = result.split_at_mut(SOURCE_SIZE);
-        let (intron_patterns, xor_selector) = key.split_at(KEY_SIZE - 2);
+        let base_key = &key[..TARGET_SIZE];
+        let xor_selector = &key[TARGET_SIZE..TARGET_SIZE + 2];
+        let intron_patterns = &key[TARGET_SIZE + 2..];
+        let intron_patterns = intron_patterns
+            .chunks_exact(2)
+            .map(|c| c.try_into().unwrap())
+            .collect::<Vec<[DNA; 2]>>();
 
         let mut intron = [DNA::A; TARGET_SIZE];
         let mut intron_len = 0;
 
         let mut intron_idx = 0;
         let mut source_idx = 0;
-        while source_idx < SOURCE_SIZE - 1 && intron_idx < 6 {
-            if intron_patterns[intron_idx..intron_idx + 2] == source[source_idx..source_idx + 2] {
+        while source_idx < SOURCE_SIZE - 1 && intron_idx < 10 {
+            let source_pattern = source[source_idx..source_idx + 2].try_into().unwrap();
+            if intron_patterns.contains(&source_pattern) {
+                // if intron_patterns[intron_idx..intron_idx + 2] == source[source_idx..source_idx + 2] {
                 let cp_len = min!(
                     SOURCE_SIZE - 1 - source_idx, // limit to the end of the source block
                     TARGET_SIZE - intron_len,     // limit to the size of target block
@@ -146,6 +154,7 @@ impl DNAC {
             .chunks_exact(4)
             .flat_map(|chunk| self.sbox[chunk.try_into().unwrap()].into_iter())
             .enumerate()
+            .map(|(i, intron_base)| (i, dna_xor(base_key[i], intron_base)))
             // order is important - target must be the first argument
             .for_each(|(i, intron_base)| target[i] = dna_xor(target[i], intron_base));
 
